@@ -1,0 +1,8 @@
+# Ergonomi&Co
+User-agent: *
+Allow: /
+Disallow: /tools/
+Disallow: /datos/
+Disallow: /assets/photos/
+
+Sitemap: https://ergonomico.es/sitemap.xml

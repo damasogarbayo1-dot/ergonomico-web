@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de ergonomía gratis: altura ideal de silla, mesa y pantalla · Ergonomi&Co</title>
+<link rel="icon" type="image/svg+xml" href="assets/img/logo-ergocheck.svg">
+<!--
+  ============================================================================
+  ErgoCheck v4 — FRAME transferible con escena paramétrica reactiva
+  ----------------------------------------------------------------------------
+  [SKIN-1] Tokens de marca (:root) — colores, radios, sombra, tipografía
+  [SKIN-2] Escena lateral paramétrica (PALETA + renderEscena) — se dibuja con
+           los números del usuario y reacciona a cada input. Las fotos reales
+           (ChatGPT) irán en secciones estáticas: hero, guías, modal.
+  [SKIN-3] Logo (svg .logo)
+  [SKIN-4] Diagramas problema/solución por zona (función diagrama) — se
+           sustituirán por pares de fotos generadas manteniendo la firma.
+  ============================================================================
+-->
+<link rel="preload" href="assets/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/fonts/inter.css">
+<style>
+  /* ======================= [SKIN-1] TOKENS DE MARCA ======================= */
+  :root{
+    --bg:#f6f4ee; --panel:#fffdf9; --panel2:#f3efe7; --ink:#1c2420; --muted:#65726a;
+    --line:#e4e0d5; --accent:#2f6d54; --accent-ink:#fff; --accent-soft:#e8f0ea;
+    --ok:#178a5c; --okbg:#e6f6ee; --warn:#b97a08; --warnbg:#fdf3dd;
+    --bad:#d64545; --badbg:#fdeaea; --field:#fffdf9;
+    --radio:16px; --radio-sm:10px;
+    --sombra:0 8px 30px rgba(19,23,34,.08);
+    --fuente:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  
+  /* ========================= ESTRUCTURA (estable) ========================= */
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font:15.5px/1.6 var(--fuente)}
+  button{font-family:inherit}
+
+  .app{display:grid;grid-template-columns:96px 1fr;max-width:1600px;margin:0 auto}
+  @media(max-width:800px){.app{grid-template-columns:1fr}}
+
+  .side{border-right:1px solid var(--line);padding:18px 10px;display:flex;flex-direction:column;gap:6px}
+  @media(max-width:800px){.side{flex-direction:row;border-right:0;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:40}}
+  .navbtn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 6px;border:0;
+    background:transparent;color:var(--muted);border-radius:12px;cursor:pointer;font-size:0.8125rem;font-weight:600}
+  .navbtn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .navbtn:hover{background:var(--panel2);color:var(--ink)}
+  .navbtn.activo{background:var(--accent-soft);color:var(--accent)}
+
+  .main{padding:22px 28px 60px;min-width:0}
+  .top{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+  .logo{width:40px;height:40px;flex-shrink:0}
+  .top h1{font-size:1.3438rem;margin:0;line-height:1.2}
+  .top .tag{color:var(--muted);font-size:0.9062rem}
+  .top .right{margin-left:auto}
+  .linkbtn{background:none;border:0;color:var(--muted);font-size:0.9375rem;cursor:pointer}
+  .linkbtn:hover{color:var(--ink)}
+
+  .vista{display:none}
+  .vista.activa{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  .cols{display:grid;grid-template-columns:minmax(320px,430px) 1fr;gap:26px;align-items:start}
+  @media(max-width:1000px){.cols{grid-template-columns:1fr}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radio);padding:24px;box-shadow:var(--sombra)}
+  .card + .card{margin-top:16px}
+  h2.tit{font-size:1.4688rem;margin:0 0 6px}
+  .sub{color:var(--muted);margin:0 0 18px;font-size:1rem}
+  .note{font-size:0.875rem;color:var(--muted);margin-top:12px;line-height:1.55}
+  .microtit{font-size:0.8125rem;font-weight:800;letter-spacing:.05em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+
+  .intro-banda{margin-bottom:18px;padding:16px 20px;display:flex;align-items:center;gap:14px;border-left:4px solid var(--accent)}
+  .intro-banda .emoji{font-size:1.5938rem}
+  .intro-banda .texto{font-size:1rem}
+  .card-form{border-color:var(--accent)}
+  .etiqueta-aqui{display:inline-block;background:var(--accent);color:var(--accent-ink);font-size:0.8125rem;
+    font-weight:800;letter-spacing:.05em;padding:5px 12px;border-radius:8px;margin-bottom:14px}
+
+  .pasos{display:flex;gap:6px;margin-bottom:20px}
+  .paso-dot{flex:1;height:4px;border-radius:4px;background:var(--line)}
+  .paso-dot.on{background:var(--accent)}
+  .paso-label{font-size:0.8438rem;color:var(--accent);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}
+  label{display:block;margin-bottom:14px}
+  label .lbl{display:block;font-size:0.9062rem;color:var(--muted);margin-bottom:5px;font-weight:600}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:var(--radio-sm);
+    background:var(--field);color:var(--ink);font-size:1.0312rem;font-family:inherit}
+  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .botones{display:flex;gap:10px;margin-top:8px}
+  .btn{padding:13px 22px;border:0;border-radius:var(--radio-sm);background:var(--accent);color:var(--accent-ink);
+    font-size:1.0312rem;font-weight:700;cursor:pointer;flex:1;text-decoration:none;text-align:center;display:block}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.sec{background:transparent;color:var(--ink);border:1px solid var(--line);flex:0 0 auto}
+
+  /* Escena paramétrica */
+  .escena-wrap{position:relative;border-radius:var(--radio);overflow:hidden;border:1px solid var(--line);background:var(--panel2)}
+  .escena-svg{display:block;width:100%;height:auto}
+  .escena-img{display:block;width:100%;height:auto}
+  .escena-anot{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+  /* Cara a cara: tu puesto hoy frente al mismo puesto con el pack */
+  .cara{display:grid;grid-template-columns:1fr 44px 1fr;gap:14px;align-items:start;margin:6px 0 28px}
+  .cara-col{min-width:0}
+  .cara-tit{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;font-size:1rem;min-height:30px}
+  .cara-tit b{font-weight:800;letter-spacing:.01em}
+  .cara-k{padding:4px 10px;border-radius:12px;font-size:0.75rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+  .cara-k.hoy{background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .cara-k.pack{background:var(--accent);color:var(--accent-ink)}
+  /* Tres flechas equidistantes a lo largo de la columna central (usuario, 2026-09-14) */
+  .cara-vs{align-self:stretch;margin-top:40px;display:flex;flex-direction:column;align-items:center;
+    justify-content:space-evenly;width:44px;background:transparent}
+  .cara-vs span{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;
+    background:var(--accent);color:#fff;font-weight:800;font-size:1.25rem}
+  .escena-wrap.pack{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  @media(max-width:860px){
+    .cara{grid-template-columns:1fr;gap:10px}
+    .cara-vs{margin:0 auto;flex-direction:row;width:100%;justify-content:space-evenly}
+    .cara-vs span{transform:rotate(90deg)}
+  }
+  .marker{position:absolute;width:28px;height:28px;border-radius:50%;transform:translate(-50%,-50%);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.9062rem;font-weight:800;
+    border:2.5px solid var(--panel);box-shadow:0 2px 10px rgba(0,0,0,.3);cursor:pointer;z-index:5;padding:0}
+  .marker.rojo{background:var(--bad)}
+  .marker.ambar{background:var(--warn)}
+  .marker.verde{background:var(--ok)}
+  .marker.rojo::after{content:'';position:absolute;inset:-7px;border-radius:50%;
+    border:2px solid var(--bad);animation:pulso 1.6s ease-out infinite}
+  @keyframes pulso{0%{transform:scale(.7);opacity:.8}100%{transform:scale(1.5);opacity:0}}
+  .cota{position:absolute;transform:translate(-50%,-50%);background:var(--ink);color:var(--bg);
+    font-size:0.8125rem;font-weight:700;padding:4px 9px;border-radius:8px;z-index:4;white-space:nowrap;opacity:.92}
+  .live-card{margin-top:14px;padding:16px}
+  .live-card p{margin:0;font-size:1rem}
+
+  .head-res{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .head-res[hidden]{display:none}
+  .badge{padding:6px 14px;border-radius:20px;font-size:0.8438rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em}
+  .badge.rojo{background:var(--badbg);color:var(--bad)}
+  .badge.verde{background:var(--okbg);color:var(--ok)}
+  .item{display:flex;gap:14px;align-items:flex-start;width:100%;text-align:left;background:var(--panel);
+    border:1px solid var(--line);border-left:4px solid var(--line);border-radius:14px;padding:17px 16px;cursor:pointer;margin-bottom:12px}
+  .item.rojo{border-left-color:var(--bad)}
+  .item.ambar{border-left-color:var(--warn)}
+  .item.verde{border-left-color:var(--ok);opacity:.8}
+  .item:hover{border-color:var(--accent);opacity:1}
+  .item.rojo:hover{border-left-color:var(--bad)}
+  .item.ambar:hover{border-left-color:var(--warn)}
+  .item.verde:hover{border-left-color:var(--ok)}
+  .item .num{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;font-size:0.9688rem;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .item.rojo .num{background:var(--bad)} .item.ambar .num{background:var(--warn)} .item.verde .num{background:var(--ok)}
+  .item .cuerpo{flex:1;min-width:0}
+  .item .fila1{display:flex;align-items:center;gap:10px;justify-content:space-between}
+  .item .nombre{font-weight:800;font-size:1.0938rem;letter-spacing:.01em}
+  .chip{padding:4px 11px;border-radius:14px;font-size:0.75rem;font-weight:800;flex-shrink:0;
+    text-transform:uppercase;letter-spacing:.07em}
+  .chip.rojo{background:var(--badbg);color:var(--bad)}
+  .chip.ambar{background:var(--warnbg);color:var(--warn)}
+  .chip.verde{background:var(--okbg);color:var(--ok)}
+  .item .desc{color:var(--muted);font-size:1rem;margin-top:4px;line-height:1.5}
+  .item .chev{color:var(--muted);align-self:center}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:14px 0}
+  .stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .stat .v{font-size:1.5938rem;font-weight:800;font-variant-numeric:tabular-nums;color:var(--accent)}
+  .stat .k{font-size:0.7812rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+
+  .prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+  .prod{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--panel2);
+    display:flex;flex-direction:column;gap:6px}
+  .prod .canal{align-self:flex-start;padding:2px 10px;border-radius:12px;font-size:0.7812rem;font-weight:800}
+  .prod .canal.propio{background:var(--accent-soft);color:var(--accent)}
+  .prod .canal.amazon{background:var(--warnbg);color:var(--warn)}
+  .prod .foto{aspect-ratio:16/10;border-radius:9px;background:var(--panel);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:4px}
+  .prod .foto img{width:100%;height:100%;object-fit:cover}
+  .prod .foto svg{width:52%;height:52%;stroke:var(--muted);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .prod .nom{font-weight:700;font-size:1rem}
+  .prod .linea2{display:flex;align-items:baseline;gap:8px}
+  .prod .precio{font-weight:800;font-size:1.0625rem;color:var(--ink)}
+  .prod .precio.amz{font-size:0.875rem;color:var(--muted);font-weight:600}
+  .prod .specs{margin:2px 0 0;padding-left:16px;color:var(--muted);font-size:0.8438rem;line-height:1.5}
+  .prod .desc{font-size:0.9062rem;color:var(--muted);flex:1}
+  .prod a{display:block;margin-top:6px;padding:9px 12px;border-radius:9px;font-size:0.9062rem;
+    font-weight:700;text-decoration:none;text-align:center}
+  .prod a.link-propio{background:var(--accent);color:var(--accent-ink)}
+  .prod a.link-amazon{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .card-pack{margin-top:16px}
+  .pack-cta{margin-top:14px}
+
+  .overlay{position:fixed;inset:0;background:rgba(10,12,18,.55);display:none;z-index:100;
+    align-items:flex-start;justify-content:center;padding:4vh 16px;overflow-y:auto}
+  .overlay.abierta{display:flex}
+  .modal{background:var(--panel);border-radius:18px;max-width:1080px;width:100%;padding:26px;
+    box-shadow:0 30px 80px rgba(0,0,0,.35);position:relative;animation:fade .2s ease}
+  .modal .cerrar{position:absolute;top:16px;right:16px;background:var(--panel2);border:1px solid var(--line);
+    width:34px;height:34px;border-radius:50%;font-size:1.0938rem;cursor:pointer;color:var(--ink)}
+  .modal .mhead{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-right:44px}
+  .modal .mhead .num{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .modal h3{margin:0;font-size:1.3438rem}
+  .dospaneles{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
+  @media(max-width:640px){.dospaneles{grid-template-columns:1fr}}
+  .panelps{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--panel2)}
+  .panelps h4{margin:0 0 8px;font-size:0.9375rem}
+  .panelps.problema h4{color:var(--bad)} .panelps.solucion h4{color:var(--ok)}
+  .panelps .dib{border-radius:10px;background:var(--panel);border:1px solid var(--line);margin-bottom:10px;overflow:hidden}
+  .panelps .dib svg,.panelps .dib img{display:block;width:100%;height:auto}
+  .panelps p{margin:0;font-size:0.9688rem;color:var(--muted)}
+  .panelps p b{color:var(--ink)}
+  .implementa{border-top:1px solid var(--line);padding-top:16px;margin-bottom:16px}
+  .implementa h4{margin:0 0 10px;font-size:1.0312rem}
+  .implementa li{margin-bottom:7px;font-size:1rem}
+  .implementa li::marker{color:var(--ok)}
+
+  .habito{display:flex;gap:14px;margin-bottom:16px}
+  .habito .icono{width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+  .habito b{display:block;margin-bottom:2px}
+  .habito p{margin:0;color:var(--muted);font-size:0.9688rem}
+  .preview-informe{border:1px solid var(--line);border-radius:12px;overflow:hidden;height:290px;position:relative;margin-bottom:8px;background:#eef0f4}
+  .preview-informe iframe{width:200%;height:580px;border:0;transform:scale(.5);transform-origin:0 0;pointer-events:none}
+  .preview-informe .velo{position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,var(--panel));pointer-events:none}
+  .email-row{display:flex;gap:10px}
+  .email-row input{flex:1}
+  .email-row .btn{flex:0 0 auto}
+  .consent{display:flex;gap:9px;align-items:flex-start;margin-top:10px;font-size:0.8438rem;color:var(--muted);line-height:1.5;cursor:pointer}
+  .consent input[type="checkbox"]{width:auto;margin-top:2px;accent-color:var(--accent)}
+  .consent a{color:var(--accent);font-weight:700}
+  .cta-informe{border-color:var(--accent);background:linear-gradient(135deg,var(--accent-soft),var(--panel));
+    display:grid;grid-template-columns:minmax(220px,1fr) minmax(280px,1.2fr);gap:20px;align-items:center;margin-bottom:20px}
+  @media(max-width:800px){.cta-informe{grid-template-columns:1fr}}
+  .cta-informe .txt b{display:block;font-size:1.1562rem;margin-bottom:4px}
+  .cta-informe .txt span{color:var(--muted);font-size:0.9688rem}
+  .aviso{font-size:0.8438rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:16px}
+  .vacio{text-align:center;padding:40px 20px;color:var(--muted)}
+  .vacio .btn{max-width:280px;margin:16px auto 0}
+h1,h2,h3,.vs-prod .nom{font-family:'Sora','Inter',-apple-system,sans-serif;letter-spacing:-0.02em}
+  .pack-img{width:100%;max-width:420px;height:auto;border-radius:14px;
+    border:1px solid var(--line);margin:6px 0 4px;display:block}
+  .nota-tienda{background:var(--warnbg);border:1px dashed var(--warn);color:var(--warn);
+    border-radius:12px;padding:11px 14px;font-size:0.9062rem;margin-top:10px}
+  /* Escaparate de categorías: mismas reglas que styles.css (.cat-escaparate) con
+     las variables de esta página. */
+  .cat-seccion{max-width:min(1480px,94vw);margin:34px auto 0;padding:0 20px}
+  .cat-escaparate{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  .cat-tile{position:relative;display:block;text-decoration:none;color:inherit}
+  .cat-tile-art{display:flex;align-items:center;justify-content:center;aspect-ratio:3/4;
+    background:var(--panel2);border:1px solid var(--line);padding:18px 14px 66px;
+    overflow:hidden;transition:border-color .18s,background .18s}
+  .cat-tile-art svg{width:100%;height:auto;max-height:100%}
+  .cat-tile-art.foto{padding:0}
+  .cat-tile-art.foto img{display:block;width:100%;height:100%;object-fit:cover}
+  .cat-tile:hover .cat-tile-art{border-color:var(--ink);background:#fff}
+  .cat-tile-lbl{position:absolute;left:10px;right:10px;bottom:12px;background:#fff;
+    border:1px solid var(--line);padding:12px 14px;text-align:center;box-shadow:var(--sombra);
+    font-family:var(--display);font-size:1rem;line-height:1.15;letter-spacing:-.01em;color:var(--ink)}
+  @media(max-width:1100px){
+    .cat-escaparate{grid-template-columns:none;grid-auto-flow:column;
+      grid-auto-columns:minmax(190px,1fr);overflow-x:auto;scroll-snap-type:x mandatory;
+      margin:0 -20px;padding:0 20px 4px;scrollbar-width:none}
+    .cat-escaparate::-webkit-scrollbar{display:none}
+    .cat-tile{scroll-snap-align:start}
+  }
+</style>
+<!--SEO:HEAD-->
+<meta name="description" content="Calcula en 1 minuto la altura ideal de tu silla, mesa y monitor según tu estatura. Diagnóstico ergonómico del puesto de trabajo gratis, sin registro y con método publicado.">
+<link rel="canonical" href="https://ergonomico.es/ergocheck.html">
+<link rel="alternate" hreflang="es" href="https://ergonomico.es/ergocheck.html">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Ergonomi&Co">
+<meta property="og:locale" content="es">
+<meta property="og:title" content="Calculadora de ergonomía gratis: altura ideal de silla, mesa y pantalla">
+<meta property="og:description" content="Calcula en 1 minuto la altura ideal de tu silla, mesa y monitor según tu estatura. Diagnóstico ergonómico del puesto de trabajo gratis, sin registro y con método publicado.">
+<meta property="og:url" content="https://ergonomico.es/ergocheck.html">
+<meta property="og:image" content="https://ergonomico.es/assets/img/og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Calculadora de ergonomía gratis: altura ideal de silla, mesa y pantalla">
+<meta name="twitter:description" content="Calcula en 1 minuto la altura ideal de tu silla, mesa y monitor según tu estatura. Diagnóstico ergonómico del puesto de trabajo gratis, sin registro y con método publicado.">
+<style>
+.seo-block{max-width:min(1480px,94vw);margin:38px auto 0;padding:0 20px 60px;font-size:1.0312rem;line-height:1.7}
+.seo-block h2{font-size:1.5312rem;margin:34px 0 12px;letter-spacing:-0.02em}
+.seo-block h3{font-size:1.1562rem;margin:22px 0 8px}
+.seo-block p{margin-bottom:12px;color:var(--ink)}
+.seo-block .lead{font-size:1.125rem;color:var(--muted)}
+.seo-block ul,.seo-block ol{margin:0 0 14px 20px}
+.seo-block li{margin-bottom:7px}
+.seo-hr{border:0;border-top:1px solid var(--line);margin:34px 0 0}
+.seo-tabla{width:100%;border-collapse:collapse;font-size:0.9688rem;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:6px 0 10px}
+.seo-tabla caption{caption-side:top;text-align:left;font-size:0.875rem;color:var(--muted);
+  padding:0 0 8px;font-weight:600}
+.seo-tabla th,.seo-tabla td{padding:9px 13px;border-bottom:1px solid var(--line);text-align:left}
+.seo-tabla tr:first-child th{background:var(--panel2);font-size:0.8125rem;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--muted)}
+.seo-tabla tr:last-child th,.seo-tabla tr:last-child td{border-bottom:0}
+.seo-scroll{overflow-x:auto}
+.seo-faq{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin-bottom:9px}
+.seo-faq summary{padding:13px 16px;font-weight:700;cursor:pointer;list-style:none}
+.seo-faq summary::before{content:'+ ';color:var(--accent);font-weight:800}
+.seo-faq[open] summary::before{content:'− '}
+.seo-faq p{padding:0 16px 14px;color:var(--muted);margin:0}
+.seo-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:14px 0}
+.seo-links a{display:block;padding:14px 16px;border-radius:14px;background:var(--panel);
+  border:1px solid var(--line);text-decoration:none;color:var(--ink);font-size:0.9688rem;font-weight:600}
+.seo-links a:hover{border-color:var(--accent);color:var(--accent)}
+.seo-links a span{display:block;font-weight:400;font-size:0.875rem;color:var(--muted);margin-top:3px}
+.seo-nota{font-size:0.875rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;margin-top:24px}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebApplication", "name": "ErgoCheck", "url": "https://ergonomico.es/ergocheck.html", "applicationCategory": "HealthApplication", "operatingSystem": "Web", "browserRequirements": "JavaScript", "description": "Calcula en 1 minuto la altura ideal de tu silla, mesa y monitor según tu estatura. Diagnóstico ergonómico del puesto de trabajo gratis, sin registro y con método publicado.", "inLanguage": "es", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "publisher": {"@type": "Organization", "name": "Ergonomi&Co", "url": "https://ergonomico.es/"}}, {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "¿A qué altura debe estar la silla según mi estatura?", "acceptedAnswer": {"@type": "Answer", "text": "Tu altura de asiento ideal es aproximadamente el 25 % de tu estatura, que equivale a tu altura poplítea (del suelo al hueco de la rodilla). Con 1,75 m son unos 44 cm. Sentado a esa altura, los pies apoyan completos en el suelo y las rodillas quedan a unos 90°."}}, {"@type": "Question", "name": "¿Y la altura de la mesa?", "acceptedAnswer": {"@type": "Answer", "text": "Ronda el 43 % de tu estatura: unos 75 cm para 1,75 m, que es justo la altura estándar de las mesas comerciales. Por eso las personas por debajo de 1,70 m o por encima de 1,85 m suelen necesitar mesa regulable, reposapiés o elevar la silla."}}, {"@type": "Question", "name": "¿Dónde coloco el monitor?", "acceptedAnswer": {"@type": "Answer", "text": "El borde superior de la pantalla debe quedar a la altura de tus ojos sentado, a un brazo de distancia (50-70 cm). ErgoCheck calcula esa altura sumando a tu altura de asiento aproximadamente el 39,5 % de tu estatura."}}, {"@type": "Question", "name": "¿Es fiable una calculadora ergonómica online?", "acceptedAnswer": {"@type": "Answer", "text": "Sirve para detectar desajustes evidentes y darte objetivos numéricos concretos, que es más de lo que hace la mayoría de la gente. No sustituye una evaluación presencial: la antropometría individual varía, sobre todo en la proporción entre tronco y piernas."}}, {"@type": "Question", "name": "¿Necesito registrarme o dar mis datos?", "acceptedAnswer": {"@type": "Answer", "text": "No. ErgoCheck es gratis, no requiere registro y tus medidas se guardan solo en el almacenamiento local de tu navegador para personalizar el resto de la web. No se envían a ningún servidor."}}, {"@type": "Question", "name": "¿Cada cuánto debo levantarme?", "acceptedAnswer": {"@type": "Answer", "text": "La recomendación habitual es cambiar de postura cada 30 minutos y levantarse cada 50-60 minutos. Ninguna silla, por buena que sea, sustituye el movimiento."}}]}, {"@type": "HowTo", "name": "Cómo evaluar la ergonomía de tu puesto de trabajo", "totalTime": "PT1M", "step": [{"@type": "HowToStep", "position": 1, "name": "Introduce tus medidas", "text": "Indica tu estatura, tu peso aproximado y cuántas horas pasas sentado al día."}, {"@type": "HowToStep", "position": 2, "name": "Mide tu puesto actual", "text": "Anota la altura de tu asiento, la de tu mesa y la del borde superior del monitor."}, {"@type": "HowToStep", "position": 3, "name": "Compara con tus valores ideales", "text": "ErgoCheck calcula tus alturas objetivo y marca con un semáforo qué zonas están correctas y cuáles conviene corregir."}, {"@type": "HowToStep", "position": 4, "name": "Corrige y verifica", "text": "Ajusta silla, mesa y pantalla a los valores objetivo. Si tu silla no llega, el filtro de cada categoría te dice cuáles sí cubren tus medidas."}]}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Herramientas", "item": "https://ergonomico.es/herramientas.html"}, {"@type": "ListItem", "position": 2, "name": "ErgoCheck"}]}]}</script>
+<!--/SEO:HEAD-->
+<!--TEMA:INI-->
+<style id="tema-ergonomico">
+/* Tokens del sitio (copiados de la referencia): la herramienta y la web deben
+   verse como el mismo producto. */
+:root{
+  --bg:#ffffff; --panel:#ffffff; --panel2:#f5f4f1;
+  --ink:#000000; --muted:#6c757d;
+  --line:#e6e3de; --line-2:#ced4da;
+  --accent:#8a7645; --accent-ink:#ffffff; --accent-soft:#f6f1e4;
+  --oro:#baa35b; --oro-claro:#e8d087;
+  /* Estados saturados (usuario, 2026-09-13): rojo, verde y ámbar intensos */
+  --ok:#16a34a; --okbg:#e3f7ea;
+  --warn:#f59e0b; --warnbg:#fff3d6;
+  --bad:#e5202e; --badbg:#fde3e5;
+  --field:#ffffff;
+  --radio:0px;
+  --sombra:0 2px 18px rgba(0,0,0,.07);
+  --fuente:'Jost','Helvetica Neue',Arial,sans-serif;
+  --display:'Archivo','Arial Narrow',Arial,sans-serif;
+  --s1:#000000; --s2:#a06557; --s3:#baa35b;
+}
+body{background:var(--bg)}
+h1,h2,h3,h4,.vs-prod .nom{font-family:var(--display);letter-spacing:-.02em}
+
+/* Esquina viva en contenedores y controles (la referencia no redondea nada) */
+.card,.card-form,.card-pack,.silla,.perif,.mesa,.prod,.sec,.stat,.modal,.marcas,
+.foto-lista,.crossell,.veredicto,.vs-why .col,.vs-prod .foto,.importado,.adslot,
+.seo-faq,.seo-links a,.seo-tabla,.preview-informe,.vs-cat,.vchip,
+input,select,textarea,button,.btn,.verbtn,.linkbtn,.cmpbtn,.barra-cmp{border-radius:0}
+.card,.silla,.perif,.mesa{box-shadow:none}
+
+/* Lo que si sigue siendo pastilla: etiquetas de dato */
+.ck,.canal,.chip,.tag,.badge,.talla-chip,.precio-chip,.sello{border-radius:999px}
+
+/* CTA principal: negro solido, mayusculas y tracking, como en el sitio */
+.btn,.verbtn,.linkbtn,.cta,.btn-buy{
+  background:#000;color:#fff;border:1px solid #000;
+  text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.btn:hover,.verbtn:hover,.linkbtn:hover,.cta:hover,.btn-buy:hover{background:#fff;color:#000}
+/* CTA secundario: contorno negro */
+.cmpbtn,.btn-secundario,.btn-ghost{
+  background:#fff;color:#000;border:1px solid #000;border-style:solid;
+  text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.cmpbtn:hover,.btn-secundario:hover,.btn-ghost:hover{background:#000;color:#fff}
+.cmpbtn.on{background:#000;color:#fff;border-color:#000}
+.barra-cmp{background:#000;color:#fff;box-shadow:none}
+.barra-cmp button{background:#fff;color:#000;border:1px solid #fff;
+  text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.barra-cmp button:hover{background:transparent;color:#fff}
+
+/* ---- Cabecera de la herramienta, con el mismo aire editorial del sitio ---- */
+.tbar{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.94);
+  backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--line)}
+.tnav{color:var(--ink-2)!important;text-decoration:none;padding:8px 12px;
+  border-radius:0!important;background:transparent!important;
+  text-transform:uppercase;letter-spacing:.08em;font-size:0.7812rem;font-weight:700}
+.tnav:hover{color:var(--ink)!important}
+.tnav.on{color:var(--ink)!important;border-bottom:2px solid var(--accent)}
+.top{align-items:flex-end;padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.top h1{font-family:var(--display);font-size:clamp(30px,4.2vw,50px);line-height:.95;
+  letter-spacing:-.015em;text-transform:uppercase;margin:0}
+.top .tag{font-size:0.75rem;font-weight:700;letter-spacing:.125em;text-transform:uppercase;
+  color:var(--muted);margin-top:8px}
+.top .tag b{color:var(--ink);font-weight:700}
+.volver{border:1px solid var(--ink);padding:9px 14px;font-size:0.75rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink)!important;text-decoration:none;
+  background:transparent;transition:background .16s,color .16s}
+.volver:hover{background:var(--ink);color:#fff!important}
+.marca-2{color:var(--accent)}
+.navbtn{border-radius:0}
+.navbtn.activo{background:var(--accent-soft);color:var(--accent);border-left:2px solid var(--accent)}
+/* ---- Vista de evaluacion: una sola tarjeta, escena a tamano hero ---- */
+.panel-eval{padding:0;overflow:hidden;border:1px solid var(--line)}
+.panel-eval .cols{grid-template-columns:minmax(300px,380px) 1fr;gap:0;align-items:stretch}
+.lado-form{padding:34px 30px}
+.lado-escena{background:var(--panel2);border-left:1px solid var(--line);padding:26px 26px 20px;
+  display:flex;flex-direction:column;justify-content:center}
+.lado-escena .escena-wrap{border:0;background:transparent}
+.lado-escena .live-card{margin:14px 0 0;font-size:0.9375rem;color:var(--ink-2);line-height:1.55}
+@media(max-width:1000px){
+  /* Esta regla es mas especifica que el .cols del propio finder, asi que sin
+     este override la vista se quedaba a dos columnas tambien en el movil y
+     desbordaba la pantalla. */
+  .panel-eval .cols{grid-template-columns:1fr}
+  .lado-escena{border-left:0;border-top:1px solid var(--line);padding:20px 18px}
+  .lado-form{padding:26px 22px}
+}
+/* Los enlaces de vuelta y el boton de la derecha, al estilizarlos con borde y
+   tracking, dejaron de caber en 390 px: aqui se les deja envolver. */
+@media(max-width:640px){
+  .top{flex-wrap:wrap;gap:10px}
+  .top .right{width:100%}
+  .volver,.linkbtn{padding:8px 11px;font-size:0.7188rem;letter-spacing:.06em}
+  .escena-wrap,.escena-wrap svg{max-width:100%}
+}
+/* Campos mas altos, con la unidad dentro (como en la referencia) */
+.lado-form label{position:relative;display:block}
+.lado-form input,.lado-form select{padding:13px 14px;font-size:1.0312rem}
+.lado-form .lbl{font-size:0.875rem;font-weight:600;color:var(--ink-2)}
+.uni{position:absolute;right:14px;bottom:13px;font-size:0.875rem;color:var(--muted);pointer-events:none}
+.lado-form input[type=number]{padding-right:52px}
+.lado-form .lbl i{font-style:normal;color:var(--muted);font-weight:400}
+.sub{font-size:1.0938rem;line-height:1.6;color:var(--ink-2);max-width:70ch}
+.sub b{color:var(--ink)}
+
+/* ---- Escala fluida, la misma ley que styles.css ----
+   Los tamanos de estas herramientas estan en rem, asi que esta linea gobierna
+   el tamano de toda la herramienta: igual que ahora hasta 1280 px y creciendo
+   en monitores grandes, donde antes se veia diminuta. */
+html{font-size:clamp(16px, 0.55vw + 9px, 20px)}
+/* En movil todo lo pulsable llega a 44 px de alto: es donde se usa la web. */
+@media(max-width:760px){
+  .btn,.verbtn,.linkbtn,.volver,.navbtn{min-height:44px;display:inline-flex;
+    align-items:center;justify-content:center}
+  .lado-form input,.lado-form select{min-height:48px}
+  /* El menu superior, en una sola fila desplazable (igual que en el sitio):
+     apilado ocupaba media pantalla antes del contenido. */
+  .tbar nav{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;
+    margin-left:0!important;width:100%}
+  .tbar nav::-webkit-scrollbar{display:none}
+  .tnav{flex:none;white-space:nowrap}
+}
+/* El plano acotado necesita mas ancho que el iconito al que sustituye */
+.silla,.perif,.peri,.mesa{grid-template-columns:60px 96px 1fr auto}
+.foto-lista{width:96px;height:74px;overflow:hidden;background:var(--panel2)}
+.foto-lista svg{width:100%;height:100%}
+@media(max-width:720px){.silla,.perif,.peri,.mesa{grid-template-columns:52px 76px 1fr}}
+
+/* ---- Variante M3 del mockup original de ErgoCheck (elegida por el usuario el
+   2026-09-14): azul #2563eb sobre gris azulado, Inter en minúsculas, esquinas 12 px, menú
+   lateral gris con la pestaña activa en blanco. Gana a las reglas de arriba. La escena 3D y
+   los marcadores no se tocan. ---- */
+:root{--bg:#f4f5f8;--panel:#fff;--panel2:#f8f9fb;--ink:#131722;--muted:#5b6472;--line:#e4e7ec;--line-2:#d5d9e0;--accent:#5b5bd6;--accent-ink:#fff;--accent-soft:#eeeefb;--field:#fff;--radio:16px;--radio-sm:10px;--sombra:0 8px 30px rgba(19,23,34,.08);--fuente:'Inter',-apple-system,"Segoe UI",Roboto,sans-serif;--display:'Inter',-apple-system,"Segoe UI",Roboto,sans-serif}
+html{font-size:clamp(15px,.5vw+9px,18px)}body{font-family:var(--fuente);background:var(--bg);color:var(--ink)}
+h1,h2,h3,h4{font-family:var(--fuente);letter-spacing:-.02em;text-transform:none}
+.tbar{background:#fff!important;border-bottom:1px solid var(--line)}.tnav{text-transform:none!important;letter-spacing:0!important;font-size:.9rem!important;font-weight:600!important;color:var(--muted)!important}
+.tnav.on{color:var(--accent)!important;border-bottom:2px solid var(--accent)}
+.top{border-bottom:0;padding-bottom:0;margin-bottom:14px;align-items:center}.top>.logo,.top>svg{width:58px;height:58px;flex:0 0 58px}.top h1{text-transform:none;font-size:clamp(22px,2.6vw,30px);font-weight:700;letter-spacing:-.02em}.marca-2{color:var(--accent)}
+.top .tag{text-transform:none;letter-spacing:0;font-weight:500;font-size:.85rem;color:var(--muted)}.top .tag b{font-weight:600}
+.linkbtn,.volver{border:1px solid var(--line);background:#fff;color:var(--ink)!important;text-transform:none;letter-spacing:0;font-weight:600;border-radius:999px;padding:8px 14px}
+.linkbtn:hover,.volver:hover{background:var(--panel2);color:var(--ink)!important}
+.btn,.verbtn,.cta{background:var(--accent);border:1px solid var(--accent);color:#fff;text-transform:none;letter-spacing:0;font-weight:600;border-radius:10px;font-size:1rem}
+.btn:hover,.verbtn:hover,.cta:hover{background:#4a4ac4;color:#fff;border-color:#4a4ac4}
+.btn.sec{background:#fff;color:var(--accent);border-color:var(--accent)}.btn.sec:hover{background:var(--accent-soft)}
+.side{background:#fff;border-right:1px solid var(--line)}.navbtn{border-radius:12px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500}
+.navbtn.activo{background:var(--accent-soft);color:var(--accent);border-left:0}
+.card,.card-form,.card-pack,.panel-eval,.escena-wrap,.prod,.stat,.seo-faq{border-radius:var(--radio);border:1px solid var(--line);box-shadow:var(--sombra)}
+.panel-eval{box-shadow:var(--sombra)}.escena-wrap{box-shadow:none}
+.item{border-radius:14px;border:1px solid var(--line)}.item.rojo{border-color:#f5c2c7}.item.ambar{border-color:#f3dfa6}.item.verde{border-color:#bfe8cd}
+.microtit{color:var(--muted);letter-spacing:.04em}.sub{color:var(--muted)}
+.cara-vs{background:transparent}.cara-vs span{background:var(--accent);color:#fff}.cara-k.pack{background:var(--accent)}.cara-k.hoy{background:var(--panel2);color:var(--muted);border-color:var(--line)}
+input,select{border-radius:10px;border:1px solid var(--line-2)}input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.modal{border-radius:18px}.panelps{border-radius:14px;border:1px solid var(--line);background:#fff}.panelps.problema h4{color:var(--bad)}.panelps.solucion h4{color:var(--ok)}
+.chip,.badge{border-radius:999px;text-transform:none;letter-spacing:0;font-weight:600}
+.head-res .badge{border-radius:999px}
+
+:root{--accent:#2563eb;--accent-soft:#dbeafe;--bg:#f3f6fb;--panel2:#eef2f8;--ink:#0b1b3a;--line:#dbe3ef;--radio:12px;--sombra:0 1px 2px rgba(11,27,58,.06)}
+.btn,.verbtn,.cta{background:#2563eb;border-color:#2563eb;border-radius:8px}.btn:hover{background:#1d4ed8;border-color:#1d4ed8}
+.side{background:#eef2f8;border-right:1px solid #dbe3ef}.navbtn.activo{background:#fff;color:#2563eb;box-shadow:0 1px 2px rgba(11,27,58,.08)}
+.item,.card,.escena-wrap{border-radius:12px}.chip,.badge{border-radius:6px}.cara-vs span,.cara-k.pack{background:#2563eb}.top h1{color:#0b1b3a}.marca-2{color:#2563eb}
+/* Cotas (175 cm, Ojos 113 cm, Mesa 75 cm) en el azul del botón principal (usuario, 2026-09-14) */
+.cota{background:var(--accent);color:#fff}
+</style>
+<style id="tema-ergocheck">
+/* Esquina redondeada y sombra, como en el mockup de referencia */
+.card,.card-form,.card-pack,.prod,.stat,.preview-informe,.escena-wrap,
+.panel-eval,.seo-faq,.seo-links a{border-radius:14px}
+.panel-eval{box-shadow:0 2px 20px rgba(0,0,0,.06);overflow:hidden}
+.modal,.panelps{border-radius:18px}
+.panelps .dib{border-radius:12px}
+input,select,textarea,.btn,.linkbtn,.volver,.cerrar{border-radius:10px}
+.cerrar{border-radius:50%}
+
+/* Tarjetas de zona con el fondo teñido de su estado: el diagnóstico se lee de un
+   vistazo, sin tener que leer la etiqueta. */
+.item{border:1px solid transparent;border-left:1px solid transparent;border-radius:14px}
+.item.rojo{background:var(--badbg);border-color:#f5b5bb}
+.item.ambar{background:var(--warnbg);border-color:#f8d98a}
+.item.verde{background:var(--okbg);border-color:#a7dfb9;opacity:1}
+.item:hover{border-color:var(--ink)}
+.item .num{box-shadow:0 0 0 3px rgba(255,255,255,.9)}
+.item .desc{color:var(--ink-2)}
+
+/* Botón que lleva a la sub-vista de recomendaciones */
+.ver-detalle{display:block;width:100%;margin:16px 0 4px;background:#fff;color:var(--ink);
+  border:1px solid var(--ink)}
+.ver-detalle:hover{background:var(--ink);color:#fff}
+.volver-res{background:none;border:0;color:var(--accent);font-weight:700;font-size:0.9062rem;
+  cursor:pointer;padding:0;margin-bottom:14px;font-family:inherit;text-transform:none;
+  letter-spacing:0}
+.volver-res:hover{text-decoration:underline}
+
+/* Tarjetas de la vista de recomendaciones detalladas */
+.detalle{display:flex;gap:14px;align-items:flex-start;border:1px solid transparent;
+  border-radius:14px;padding:16px 18px;margin-bottom:10px}
+.detalle.rojo{background:var(--badbg);border-color:#f5b5bb}
+.detalle.ambar{background:var(--warnbg);border-color:#f8d98a}
+.detalle.verde{background:var(--okbg);border-color:#d5e0d9}
+.detalle .num{width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;
+  font-size:0.9688rem;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  box-shadow:0 0 0 3px rgba(255,255,255,.9)}
+.detalle.rojo .num{background:var(--bad)}
+.detalle.ambar .num{background:var(--warn)}
+.detalle.verde .num{background:var(--ok)}
+.detalle .cuerpo{flex:1;min-width:0}
+.detalle .fila1{display:flex;align-items:center;gap:10px;justify-content:space-between;
+  margin-bottom:6px}
+.detalle .nombre{font-weight:800;font-size:1.0938rem}
+.detalle .desc{margin:0;font-size:0.9688rem;line-height:1.55;color:var(--ink-2)}
+.ver-sol{background:none;border:0;padding:0;margin-top:10px;color:var(--accent);
+  font-weight:700;font-size:0.875rem;cursor:pointer;font-family:inherit;
+  text-transform:none;letter-spacing:0}
+.ver-sol:hover{text-decoration:underline}
+</style>
+<!--TEMA:FIN-->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "25938a1b47d04a6ea2856a198a04b793"}'></script>
+</head>
+<body>
+<div class="tbar">
+  <div style="max-width:min(1480px,94vw);margin:0 auto;padding:10px 20px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+    <a href="index.html" style="display:flex;gap:8px;align-items:center;font-weight:800;font-size:1.0625rem;color:var(--ink);text-decoration:none">
+      <img src="assets/img/logo-ergonomico.png" alt="Ergonomi&amp;Co" width="197" height="42" style="display:block"></a>
+    <nav style="margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;font-size:0.9375rem;font-weight:700">
+      <a href="index.html" class="tnav">Productos</a>
+      <a href="ergocheck.html" class="tnav on">ErgoCheck</a>
+      <a href="comparador.html" class="tnav">Comparador</a>
+      <a href="guias.html" class="tnav">Guías</a>
+      <a href="herramientas.html" class="tnav">Herramientas</a>
+    </nav>
+  </div>
+</div>
+<div class="app">
+
+  <nav class="side" aria-label="Secciones">
+    <button class="navbtn activo" data-vista="evaluacion">
+      <svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+      Evaluación</button>
+    <button class="navbtn" data-vista="resultados">
+      <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>
+      Resultados</button>
+    <button class="navbtn" data-vista="consejos">
+      <svg viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 1 4 10.5c-.8.7-1 1.5-1 2.5h-6c0-1-.2-1.8-1-2.5A6 6 0 0 1 12 3z"/><path d="M10 19h4M11 22h2"/></svg>
+      Consejos</button>
+    <button class="navbtn" data-vista="informe">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      Tu informe</button>
+  </nav>
+
+  <main class="main">
+    <div class="top">
+      <!-- [SKIN-3] logo -->
+      <img class="logo" src="assets/img/logo-ergocheck.svg" alt="ErgoCheck" width="46" height="46">
+      <div>
+        <h1 id="nombreHerramienta">Ergo<span class="marca-2">Check</span></h1>
+        <div class="tag">Mejora tu postura, mejora tu día · por <b>Ergonomi&amp;Co</b></div>
+      </div>
+      <div class="right">
+        <button class="linkbtn" data-vista="consejos">Sobre ergonomía</button>
+      </div>
+    </div>
+
+    <!-- ============ VISTA: EVALUACIÓN ============ -->
+    <section class="vista activa" id="vista-evaluacion">
+      <div class="card panel-eval">
+        <div class="cols">
+        <div class="lado-form">
+          <div class="pasos" id="pasosBar"><div class="paso-dot on"></div><div class="paso-dot"></div><div class="paso-dot"></div></div>
+
+          <div class="wpaso" id="wpaso1">
+            <div class="paso-label">Paso 1 de 3 · Tus medidas</div>
+            <h2 class="tit">Comencemos con tus medidas</h2>
+            <p class="sub">Introduce tus datos para personalizar la evaluación de tu espacio de trabajo.</p>
+            <div class="row">
+              <label><span class="lbl">Estatura</span><input type="number" id="estatura" value="175" min="140" max="210"><span class="uni">cm</span></label>
+              <label><span class="lbl">Peso <i>(opcional)</i></span><input type="number" id="peso" placeholder="—" min="35" max="200"><span class="uni">kg</span></label>
+            </div>
+            <div class="row">
+              <label><span class="lbl">Edad</span><input type="number" id="edad" value="30" min="14" max="99"><span class="uni">años</span></label>
+              <label><span class="lbl">Horas sentado</span><input type="number" id="horas" value="8" min="1" max="16"><span class="uni">h/día</span></label>
+            </div>
+            <div class="botones"><button class="btn" data-ir="2">Continuar</button></div>
+          </div>
+
+          <div class="wpaso" id="wpaso2" hidden>
+            <div class="paso-label">Paso 2 de 3 · Tu equipo</div>
+            <h2 class="tit">¿Cómo es tu puesto?</h2>
+            <p class="sub">Lo que tienes hoy determina qué ajustes necesitas.</p>
+            <label><span class="lbl">¿Con qué trabajas?</span>
+              <select id="equipo">
+                <option value="portatil">Portátil</option>
+                <option value="monitor">Monitor de sobremesa</option>
+                <option value="ambos">Portátil + monitor externo</option>
+              </select></label>
+            <label><span class="lbl">¿Tu mesa es regulable en altura?</span>
+              <select id="mesaReg"><option value="no">No, es fija</option><option value="si">Sí, regulable</option></select></label>
+            <label id="wrapMesaAltura"><span class="lbl">Altura de tu mesa (cm) — mídela, 1 minuto</span>
+              <input type="number" id="mesaAltura" value="75" min="55" max="95"></label>
+            <label><span class="lbl">¿Qué silla usas?</span>
+              <select id="tipoSilla">
+                <option value="oficina">Oficina básica, sin lumbar regulable</option>
+                <option value="comedor">De comedor o cocina</option>
+                <option value="gaming">Gaming</option>
+                <option value="ergonomica">Ergonómica, con lumbar regulable</option>
+              </select></label>
+            <div class="botones"><button class="btn sec" data-ir="1">Atrás</button><button class="btn" data-ir="3">Continuar</button></div>
+          </div>
+
+          <div class="wpaso" id="wpaso3" hidden>
+            <div class="paso-label">Paso 3 de 3 · Tus hábitos</div>
+            <h2 class="tit">Últimas dos preguntas</h2>
+            <p class="sub">Los hábitos pesan tanto como el equipo.</p>
+            <label><span class="lbl">¿Llamadas frecuentes durante el trabajo?</span>
+              <select id="llamadas"><option value="no">No</option><option value="si">Sí</option></select></label>
+            <label><span class="lbl">¿Trabajas con documentos en papel?</span>
+              <select id="papel"><option value="no">No</option><option value="si">Sí</option></select></label>
+            <div class="botones"><button class="btn sec" data-ir="2">Atrás</button><button class="btn" id="btnEvaluar">Comenzar evaluación</button></div>
+            <p class="note">Cálculo orientativo basado en proporciones antropométricas y criterios de
+            ergonomía de puesto de pantalla (ISO 9241-5, EN 1335, guía técnica del INSST, RD 488/1997).
+            No es consejo médico.</p>
+          </div>
+        </div>
+
+        <div class="lado-escena">
+          <div class="escena-wrap" id="escenaEval"></div>
+          <p class="live-card" id="liveHint"></p>
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VISTA: RESULTADOS ============ -->
+    <section class="vista" id="vista-resultados">
+      <div id="resVacio" class="card vacio">
+        <h2 class="tit">Aún no hay evaluación</h2>
+        <p class="sub">Completa los 3 pasos y te mostramos aquí tu diagnóstico personalizado.</p>
+        <button class="btn" data-vista="evaluacion">Ir a la evaluación</button>
+      </div>
+
+      <div id="resContenido" hidden>
+        <!-- Cabecera de resultados oculta a petición del usuario (2026-09-14): el cara a
+             cara se explica solo. El contador sigue existiendo para el JS. -->
+        <div class="head-res" hidden>
+          <h2 class="tit" style="margin:0">Tu evaluación ergonómica</h2>
+          <span class="badge rojo" id="badgeConteo"></span>
+        </div>
+
+        <!-- Cara a cara: tu puesto hoy frente al mismo puesto con el pack puesto.
+             Misma cámara, mismo personaje y mismos números en las dos escenas. -->
+        <div class="cara">
+          <div class="cara-col">
+            <div class="cara-tit"><span class="cara-k hoy">Hoy</span><b>Tu puesto ahora</b><span class="chip rojo" id="caraHoy"></span></div>
+            <div class="escena-wrap" id="escenaRes"></div>
+          </div>
+          <div class="cara-vs" aria-hidden="true"><span>→</span><span>→</span><span>→</span></div>
+          <div class="cara-col">
+            <div class="cara-tit"><span class="cara-k pack">Con tu pack</span><b>Así quedaría</b><span class="chip verde" id="caraPack"></span></div>
+            <div class="escena-wrap pack" id="escenaPack"></div>
+          </div>
+        </div>
+
+        <div class="cols">
+          <div>
+            <div class="microtit">Zona a zona, por importancia</div>
+            <div id="listaItems"></div>
+            <button class="btn sec ver-detalle" data-vista="detalle">Ver recomendaciones detalladas</button>
+            <div class="stats" id="statsMedidas"></div>
+            <p class="note" id="notaPersonal"></p>
+          </div>
+          <div>
+            <div class="card card-pack" id="cardPack" hidden>
+              <h2 class="tit" style="font-size:1.1562rem">Tu pack recomendado</h2>
+              <p class="sub" style="margin-bottom:14px">Los elementos que tu puesto necesita, juntos:</p>
+              <div class="prods" id="packItems"></div>
+              <!-- TODO: URL real del pack en la tienda -->
+              <img class="pack-img" id="packImg" src="assets/img/pack-proximamente.webp" alt="Pack Ergonomi&amp;Co — próximamente" width="900" height="500" loading="lazy" hidden>
+              <a class="btn pack-cta" id="packCta" hidden></a>
+              <p class="nota-tienda" id="notaTienda" hidden>Estas piezas son de fabricación propia y <b>aún no están a la venta</b>. Mientras tanto, en los finders tienes alternativas disponibles hoy.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card cta-informe">
+          <div class="txt"><b>Llévate tu informe personalizado</b>
+            <span>Tus medidas exactas, el diagnóstico por zonas y el plan de mejora — en tu
+            correo, para tenerlo siempre a mano.</span></div>
+          <div>
+            <div class="email-row">
+              <input type="email" id="email2" placeholder="tu@email.com">
+              <button class="btn" id="btnEmail2">Descargar informe</button>
+            </div>
+            <label class="consent"><input type="checkbox" id="consent2"> He leído y acepto la
+              <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a> y los <a href="aviso-legal.html" target="_blank" rel="noopener">términos y condiciones</a>,
+              y acepto recibir el informe y comunicaciones de Ergonomi&Co por email.</label>
+            <p class="note" id="emailOk2"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VISTA: RECOMENDACIONES DETALLADAS ============ -->
+    <!-- Sub-vista de Resultados: la misma lista, pero con la solución de cada
+         zona desplegada en vez de tener que abrir el modal para leerla. -->
+    <section class="vista" id="vista-detalle">
+      <button class="volver-res" data-vista="resultados">← Volver a resultados</button>
+      <div class="cols">
+        <div>
+          <h2 class="tit">Recomendaciones detalladas</h2>
+          <p class="sub">Qué cambiar en cada zona, con la medida exacta que sale de tus
+          datos. Toca «ver solución» para el antes y después y los productos.</p>
+          <div id="listaDetalle"></div>
+        </div>
+        <div>
+          <div class="escena-wrap" id="escenaDetalle"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VISTA: CONSEJOS ============ -->
+    <section class="vista" id="vista-consejos">
+      <div class="card" style="max-width:760px">
+        <h2 class="tit">Los 3 hábitos que multiplican cualquier setup</h2>
+        <p class="sub">Ningún accesorio sustituye al movimiento. El mejor puesto del mundo sigue estas tres reglas:</p>
+        <div class="habito"><div class="icono">1</div><div>
+          <b>Levántate 2-3 minutos cada 45-60.</b>
+          <p>La mejor postura es la siguiente: el cuerpo está hecho para alternar, no para aguantar.</p></div></div>
+        <div class="habito"><div class="icono">2</div><div>
+          <b>Regla 20-20-20 para la vista.</b>
+          <p>Cada 20 minutos, mira algo a 20 pies (~6 m) durante 20 segundos. Cuando la vista
+          se cansa, el cuello se adelanta.</p></div></div>
+        <div class="habito"><div class="icono">3</div><div>
+          <b>Cambia de postura dentro de la silla.</b>
+          <p>Reclínate a ratos, usa el sentado activo en intervalos cortos y deja que el
+          apoyo lumbar trabaje por ti.</p></div></div>
+        <p class="aviso">Metodología: proporciones antropométricas estándar y criterios de
+        ergonomía de puesto de pantalla — ISO 9241-5, EN 1335 y guía técnica del INSST
+        (RD 488/1997). Contenido orientativo de bienestar, no consejo médico.</p>
+      </div>
+    </section>
+
+    <!-- ============ VISTA: TU INFORME ============ -->
+    <section class="vista" id="vista-informe">
+      <div class="card" style="max-width:640px">
+        <h2 class="tit">Tu informe completo</h2>
+        <p class="sub">Te enviamos las medidas exactas de tu puesto, el diagnóstico por zonas
+        y la lista de mejoras priorizada, para tenerla siempre a mano.</p>
+        <div class="preview-informe">
+          <iframe src="informe-email.html" title="Vista previa de tu informe" tabindex="-1"></iframe>
+          <div class="velo"></div>
+        </div>
+        <p class="note" style="margin:0 0 16px">Así es el informe que recibirás: todo lo que ya ves
+        en pantalla, en un documento para guardar, imprimir o reenviar.</p>
+        <div class="email-row">
+          <input type="email" id="email" placeholder="tu@email.com">
+          <button class="btn" id="btnEmail">Recibir informe</button>
+        </div>
+        <label class="consent"><input type="checkbox" id="consent"> He leído y acepto la
+          <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a> y los <a href="aviso-legal.html" target="_blank" rel="noopener">términos y condiciones</a>,
+          y acepto recibir el informe y comunicaciones de Ergonomi&Co por email.</label>
+        <p class="note" id="emailOk"></p>
+        <p class="aviso">Algunos enlaces de esta página son de afiliados: si compras a través
+        de ellos, podemos recibir una comisión sin coste adicional para ti.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="cerrar" id="btnCerrar" aria-label="Cerrar">✕</button>
+    <div id="modalCuerpo"></div>
+  </div>
+</div>
+
+<script>
+/* ========================== CONFIGURACIÓN ========================== */
+/* Sello de caché de las escenas: súbelo cuando cambie una imagen sin cambiar de nombre. */
+const ESC_VER = '20260916a';
+const CONFIG = {
+  marca: 'Ergonomi&Co',
+  herramienta: 'ErgoCheck',   /* marca EUIPO viva cl.42 hasta 2027 — ver doc 10 */
+  modo: 'organico',           /* 'organico' | 'landing' (landing oculta Amazon) */
+
+  /* [SKIN-2b] MATRIZ DE IMÁGENES DE ESCENA (fase B) — 12 estados discretos.
+     Los valores continuos (cm, kg) van SIEMPRE como capa superpuesta, como
+     en el mockup de referencia. Imágenes en assets/escenas/<clave>.jpg
+     (1536x1024). markers: {zona:[ax,ay,mx,my]} en % de la imagen — (ax,ay) es
+     el ANCLA sobre el cuerpo o el equipo y (mx,my) la posición del número;
+     entre ambos va la línea discontinua del color del estado, como en la
+     escena paramétrica. Calibradas el 2026-09-12 sobre cada imagen.
+     Si una imagen faltase (disponible:false), la escena paramétrica es el
+     fallback. Prompts de generación: web/assets/escenas/PROMPTS.md */
+  escenas: {
+    'portatil-baja-sin': {disponible:true, markers:{monitor:[65.1,34.4,70.4,25.9], lumbar:[35.7,45.9,27.5,43.4], munecas:[56.1,43.0,57.2,33.5], pies:[56.5,78.1,61.8,84.7], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[69.0,45.1,71.5,36.6], silla:[33.9,33.2,28.0,26.4]}, cotas:null},
+    'portatil-baja-con': {disponible:true, markers:{monitor:[65.1,34.4,70.4,25.9], lumbar:[35.7,45.9,27.5,43.4], munecas:[56.1,43.0,57.2,33.5], pies:[57.3,75.7,62.6,82.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[69.0,45.1,71.5,36.6], silla:[33.9,33.2,28.0,26.4]}, cotas:null},
+    'portatil-ok-sin':   {disponible:true, markers:{monitor:[64.8,22.9,70.1,14.5], lumbar:[35.2,48.8,27.0,46.3], munecas:[54.0,43.0,55.1,33.5], pies:[57.3,78.1,62.6,84.7], core:[42.3,55.7,35.2,63.2], llamadas:[39.1,14.6,39.1,7.0], papel:[69.0,45.1,71.5,36.6], silla:[31.6,34.7,25.7,27.8]}, cotas:null},
+    'portatil-ok-con':   {disponible:true, markers:{monitor:[64.8,22.9,70.1,14.5], lumbar:[35.2,48.8,27.0,46.3], munecas:[53.7,43.0,54.8,33.5], pies:[57.3,75.2,62.6,81.7], core:[42.3,56.2,35.2,63.7], llamadas:[39.1,14.6,39.1,7.0], papel:[69.0,45.1,71.5,36.6], silla:[31.6,34.7,25.7,27.8]}, cotas:null},
+    'monitor-baja-sin':  {disponible:true, markers:{monitor:[65.8,28.8,71.1,20.3], lumbar:[35.7,45.9,27.5,43.4], munecas:[56.0,44.4,57.0,35.0], pies:[56.3,78.6,61.7,85.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[77.8,45.9,80.4,38.6], silla:[33.9,33.2,28.0,26.4]}, cotas:null},
+    'monitor-baja-con':  {disponible:true, markers:{monitor:[65.8,28.8,71.1,20.3], lumbar:[35.7,45.9,27.5,43.4], munecas:[56.0,44.4,57.0,35.0], pies:[57.3,75.7,62.6,82.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[77.8,45.9,80.4,38.6], silla:[33.9,33.2,28.0,26.4]}, cotas:null},
+    'monitor-ok-sin':    {disponible:true, markers:{monitor:[65.8,18.1,71.1,9.6], lumbar:[33.9,48.8,25.7,46.3], munecas:[53.1,46.9,54.1,37.4], pies:[54.0,81.1,59.4,87.6], core:[41.7,57.1,34.5,64.6], llamadas:[39.1,14.6,39.1,7.0], papel:[77.8,47.4,80.4,40.0], silla:[30.6,35.2,24.7,28.3]}, cotas:null},
+    'monitor-ok-con':    {disponible:true, markers:{monitor:[65.8,18.1,71.1,9.6], lumbar:[33.5,48.3,25.3,45.8], munecas:[53.1,46.7,54.1,37.2], pies:[55.3,76.7,60.7,83.2], core:[41.3,57.1,34.2,64.6], llamadas:[39.1,14.6,39.1,7.0], papel:[77.8,47.4,80.4,40.0], silla:[30.6,35.2,24.7,28.3]}, cotas:null},
+    'ambos-baja-sin':    {disponible:true, markers:{monitor:[70.2,27.5,75.5,19.0], lumbar:[35.7,45.9,27.5,43.4], munecas:[56.0,43.5,57.0,34.0], pies:[56.3,78.6,61.7,85.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[77.8,45.9,80.4,38.6], silla:[33.9,33.2,28.0,26.4]}, cotas:null},
+    'ambos-baja-con':    {disponible:true, markers:{monitor:[70.2,27.5,75.5,19.0], lumbar:[35.7,45.9,27.5,43.4], munecas:[56.0,43.5,57.0,34.0], pies:[57.6,74.7,63.0,81.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[77.8,45.9,80.4,38.6], silla:[33.9,33.2,28.0,26.4]}, cotas:null},
+    'ambos-ok-sin':      {disponible:true, markers:{monitor:[70.3,22.0,75.7,13.5], lumbar:[32.6,48.8,24.3,46.3], munecas:[52.1,48.0,53.1,38.6], pies:[53.4,81.1,58.7,87.6], core:[40.4,57.6,33.2,65.1], llamadas:[39.1,14.6,39.1,7.0], papel:[78.1,49.3,80.7,42.0], silla:[31.9,34.7,26.0,27.8]}, cotas:null},
+    'ambos-ok-con':      {disponible:true, markers:{monitor:[70.3,22.0,75.7,13.5], lumbar:[32.6,48.8,24.3,46.3], munecas:[52.1,48.0,53.1,38.6], pies:[53.7,77.1,59.0,83.7], core:[40.4,57.6,33.2,65.1], llamadas:[39.1,14.6,39.1,7.0], papel:[78.1,49.3,80.7,42.0], silla:[31.9,34.7,26.0,27.8]}, cotas:null},
+    /* «Después» del cara a cara: el mismo puesto con todo el pack (soporte o elevador,
+       teclado con reposamuñecas, ratón vertical, cojín lumbar, disco, atril, reposapiés,
+       auriculares). Cada número señala la pieza que corrige esa zona. */
+    'portatil-pack':     {disponible:true, markers:{monitor:[61.8,41.0,55.3,35.2], lumbar:[35.5,45.9,27.3,43.4], munecas:[50.3,45.1,48.3,36.3], pies:[57.3,80.1,62.6,86.6], core:[41.7,58.6,34.5,66.1], llamadas:[36.0,16.4,36.0,8.8], silla:[30.6,34.7,24.7,27.8]}, cotas:null},
+    'monitor-pack':      {disponible:true, markers:{monitor:[64.8,43.9,60.2,35.6], lumbar:[33.5,45.9,25.3,43.4], munecas:[48.8,48.0,46.9,39.3], pies:[56.6,83.0,62.0,89.6], core:[40.4,60.1,33.2,67.6], llamadas:[32.2,16.9,32.2,9.3], silla:[28.6,35.2,22.8,28.3]}, cotas:null},
+    'ambos-pack':        {disponible:true, markers:{monitor:[60.9,45.9,55.7,40.0], lumbar:[32.6,48.8,24.3,46.3], munecas:[47.0,48.3,45.1,39.6], pies:[54.0,83.0,59.4,89.6], core:[40.4,60.5,33.2,68.1], llamadas:[35.4,18.0,35.4,10.4], silla:[29.3,35.2,23.4,28.3]}, cotas:null},
+    /* Silla de comedor (2026-09-13): mismas escenas «hoy» con silla de madera sin ruedas.
+       Se eligen cuando tipoSilla==='comedor'. */
+    'portatil-baja-sin-comedor': {disponible:true, markers:{monitor:[65.1,34.4,70.4,25.9], lumbar:[36.2,46.7,28.0,44.1], munecas:[56.1,43.0,57.2,33.5], pies:[56.5,78.1,61.8,84.7], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[69.0,45.1,71.5,36.6], silla:[33.3,41.0,27.5,34.2]}, cotas:null},
+    'portatil-baja-con-comedor': {disponible:true, markers:{monitor:[65.1,34.4,70.4,25.9], lumbar:[36.2,46.7,28.0,44.1], munecas:[56.1,43.0,57.2,33.5], pies:[57.3,75.7,62.6,82.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[69.0,45.1,71.5,36.6], silla:[33.3,41.0,27.5,34.2]}, cotas:null},
+    'monitor-baja-sin-comedor':  {disponible:true, markers:{monitor:[65.8,28.8,71.1,20.3], lumbar:[36.2,46.7,28.0,44.1], munecas:[56.0,44.4,57.0,35.0], pies:[56.3,78.6,61.7,85.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[77.8,45.9,80.4,38.6], silla:[33.3,41.0,27.5,34.2]}, cotas:null},
+    'monitor-baja-con-comedor':  {disponible:true, markers:{monitor:[65.8,28.8,71.1,20.3], lumbar:[36.2,46.7,28.0,44.1], munecas:[56.0,44.4,57.0,35.0], pies:[57.3,75.7,62.6,82.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[77.8,45.9,80.4,38.6], silla:[33.3,41.0,27.5,34.2]}, cotas:null},
+    'ambos-baja-sin-comedor':    {disponible:true, markers:{monitor:[70.2,27.5,75.5,19.0], lumbar:[36.2,46.7,28.0,44.1], munecas:[56.0,43.5,57.0,34.0], pies:[56.3,78.6,61.7,85.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[77.8,45.9,80.4,38.6], silla:[33.3,41.0,27.5,34.2]}, cotas:null},
+    'ambos-baja-con-comedor':    {disponible:true, markers:{monitor:[70.2,27.5,75.5,19.0], lumbar:[36.2,46.7,28.0,44.1], munecas:[56.0,43.5,57.0,34.0], pies:[57.6,74.7,63.0,81.2], core:[42.3,54.7,35.2,62.2], llamadas:[48.3,16.6,48.3,9.0], papel:[77.8,45.9,80.4,38.6], silla:[33.3,41.0,27.5,34.2]}, cotas:null}
+  }
+};
+
+/* Datos de ficha de producto.
+   TODO al integrar:
+   - img/precio de los propios: desde la ficha Shopify (asset de producto real)
+   - Amazon: precio y valoraciones SIEMPRE en vivo via PA-API/SiteStripe
+     (mostrar cifras estaticas viola su acuerdo) — por eso aqui no se ponen */
+const PRODUCTOS = {
+  soportePortatil:{canal:'propio', nombre:'Soporte de portátil plegable', precio:'', img:null,
+    desc:'Sube la pantalla a tu línea de ojos. Aluminio, plegable, cabe en la mochila.',
+    specs:['6 alturas · aluminio · 280 g','Compatible 10-17"'], url:'#tienda'},
+  elevadorMonitor:{canal:'propio', nombre:'Elevador de monitor', precio:'', img:null,
+    desc:'Eleva el borde superior de la pantalla hasta tu línea de ojos exacta.',
+    specs:['Altura regulable 8-15 cm','Soporta hasta 20 kg'], url:'#tienda'},
+  cojinLumbar:{canal:'propio', nombre:'Cojín lumbar viscoelástico', precio:'', img:null,
+    desc:'Convierte cualquier silla en una silla con soporte lumbar.',
+    specs:['Espuma de alta densidad','Funda lavable · correa de sujeción'], url:'#tienda'},
+  reposapies:{canal:'propio', nombre:'Reposapiés ajustable', precio:'', img:null,
+    desc:'Ajustable a la altura exacta que te falta para apoyar los pies planos.',
+    specs:['Altura 8-18 cm · inclinable','Superficie antideslizante'], url:'#tienda'},
+  reposamunecas:{canal:'propio', nombre:'Reposamuñecas de espuma', precio:'', img:null,
+    desc:'Apoyo del talón de la mano en las pausas de tecleo.',
+    specs:['Espuma (sin gel) · 44 cm','Base antideslizante'], url:'#tienda'},
+  atril:{canal:'propio', nombre:'Atril de documentos', precio:'', img:null,
+    desc:'El papel junto a la pantalla: se acabó mirar abajo cientos de veces al día.',
+    specs:['7 ángulos · plegable','Hasta A4 · clip sujetapapeles'], url:'#tienda'},
+  discoSentado:{canal:'propio', nombre:'Disco de sentado activo', precio:'', img:null,
+    desc:'Activa el core en intervalos cortos. Ideal para jornadas largas.',
+    specs:['Ø 33 cm · inflable','Dos caras: lisa y táctil'], url:'#tienda'},
+  tecladoRaton:{canal:'amazon', nombre:'Teclado + ratón externos', img:null,
+    desc:'Imprescindibles con soporte de portátil: manos abajo, pantalla arriba.',
+    specs:['Imprescindible con portátil elevado'], url:'https://www.amazon.es/s?k=teclado%20y%20raton%20ergonomico%20inalambrico&tag=ergonomico029-21',
+    finder:'ratones-ergonomicos.html#filtros'},
+  sillaErgo:{canal:'amazon', nombre:'Silla ergonómica regulable', img:null,
+    desc:'Altura, profundidad lumbar y reposabrazos ajustables.',
+    specs:['Busca: lumbar regulable + asiento con profundidad'], url:'https://www.amazon.es/s?k=silla%20ergonomica%20oficina%20lumbar%20regulable&tag=ergonomico029-21',
+    finder:'sillas-ergonomicas.html#filtros'},
+  mesaElevable:{canal:'amazon', nombre:'Escritorio elevable sit-stand', img:null,
+    desc:'Alterna sentado y de pie. La solución de fondo si tu mesa no está a tu medida.',
+    specs:['Debe cubrir tus DOS alturas: sentado y de pie','Doble motor y memorias si cambias de postura a diario'],
+    url:'escritorios-elevables.html#filtros', finder:'escritorios-elevables.html#filtros'},
+  convertidorEscritorio:{canal:'amazon', nombre:'Convertidor de escritorio', img:null,
+    desc:'Se apoya sobre la mesa que ya tienes y sube monitor y teclado para trabajar de pie.',
+    specs:['Su recorrido se suma a la altura de tu mesa actual','Sin obras ni cambiar de mueble'],
+    url:'convertidores-de-escritorio.html#filtros', finder:'convertidores-de-escritorio.html#filtros'},
+  brazoMonitor:{canal:'amazon', nombre:'Brazo de monitor', img:null,
+    desc:'Altura, profundidad y giro milimétricos. Libera la mesa.',
+    specs:['Compatible VESA 75/100'], url:'https://www.amazon.es/s?k=brazo%20monitor%20vesa%20articulado&tag=ergonomico029-21'},
+  auriculares:{canal:'amazon', nombre:'Auriculares con micrófono', img:null,
+    desc:'Nunca más el teléfono atrapado entre la oreja y el hombro.',
+    specs:['Con micro · ligeros para jornada completa'], url:'https://www.amazon.es/s?k=auriculares%20con%20microfono%20teletrabajo&tag=ergonomico029-21'},
+  ratonVertical:{canal:'amazon', nombre:'Ratón vertical', img:null,
+    desc:'Reduce la pronación del antebrazo y el doblado de muñeca.',
+    specs:['Ángulo 57-60º · talla según mano'], url:'https://www.amazon.es/s?k=raton%20vertical%20ergonomico&tag=ergonomico029-21',
+    finder:'ratones-ergonomicos.html#filtros'}
+};
+
+/* n se reasigna por severidad en cada cálculo (los números de la lista y de la
+   escena siempre coinciden y van en orden 1,2,3...) */
+/* Zonas visibles (marcadores, lista y modal). «lumbar» y «core» siguen
+   calculándose en estado (alimentan el pack y el texto de la silla), pero desde
+   el 2026-09-13 van fusionadas bajo «Tu silla» para no saturar la pantalla. */
+const ZONAS = {
+  monitor:{n:1, nombre:'Altura de la pantalla'},
+  silla:{n:2, nombre:'Tu silla'},
+  munecas:{n:3, nombre:'Muñecas'},
+  pies:{n:4, nombre:'Apoyo de los pies'},
+  llamadas:{n:5, nombre:'Cuello (llamadas)'},
+  papel:{n:6, nombre:'Documentos'}
+};
+const ORDEN = {rojo:0, ambar:1, verde:2};
+const CHIP = {rojo:'Crítico', ambar:'A mejorar', verde:'Bien'};
+
+let R = null;
+
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value) || 0;
+const val = id => $(id).value;
+
+/* ---------- Navegación ---------- */
+function irVista(v){
+  document.querySelectorAll('.vista').forEach(s=>s.classList.toggle('activa', s.id==='vista-'+v));
+  /* «detalle» es una sub-vista de Resultados: el menú lateral sigue marcando
+     Resultados para que no se pierda el sitio donde se está. */
+  const marcado = (v === 'detalle') ? 'resultados' : v;
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('activo', b.dataset.vista===marcado));
+  if(v === 'detalle') pintaDetalle();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('[data-vista]').forEach(b=>b.addEventListener('click', ()=>irVista(b.dataset.vista)));
+
+/* ---------- Wizard ---------- */
+function irPaso(p){
+  [1,2,3].forEach(i=>{ $('wpaso'+i).hidden = (i!==p); });
+  document.querySelectorAll('#pasosBar .paso-dot').forEach((d,i)=>d.classList.toggle('on', i<p));
+}
+document.querySelectorAll('[data-ir]').forEach(b=>b.addEventListener('click', ()=>irPaso(parseInt(b.dataset.ir))));
+$('mesaReg').addEventListener('change', e=>{ $('wrapMesaAltura').style.display = e.target.value==='si'?'none':'block'; });
+$('btnEvaluar').addEventListener('click', ()=>{ calcular(); irVista('resultados'); });
+
+/* ---------- Cálculo ---------- */
+function computar(){
+  const h = num('estatura'), edad = num('edad'), peso = num('peso'), horas = num('horas');
+  const equipo = val('equipo'), mesaReg = val('mesaReg')==='si';
+  /* Tipo de silla (2026-09-13): una sola pregunta sustituye a «regulable en
+     altura» y «sujeta la lumbar». comedor → ni regula ni sujeta; oficina básica
+     y gaming → regulan pero no sujetan; ergonómica → ambas. */
+  const tipoSilla = val('tipoSilla') || 'oficina';
+  const sillaReg = tipoSilla !== 'comedor';
+  const tieneLumbar = tipoSilla === 'ergonomica', llamadas = val('llamadas')==='si', papel = val('papel')==='si';
+
+  const asiento = Math.round(h*0.25);
+  const mesaIdeal = Math.round(h*0.43);
+  const ojos = Math.round(asiento + h*0.395);
+  const mesaReal = mesaReg ? mesaIdeal : num('mesaAltura');
+  const desajusteMesa = mesaReal - mesaIdeal;
+  const alzaPies = (!mesaReg && desajusteMesa >= 2) ? desajusteMesa : 0;
+  const topPantalla = mesaReal + (equipo==='portatil' ? 24 : 45);
+  const elevacion = Math.max(0, Math.round(ojos - topPantalla));
+  const esPortatil = (equipo==='portatil' || equipo==='ambos');
+
+  const estado = {};
+  /* Nunca verde: sin medir SU pantalla no se puede declarar correcta — y el
+     elevador regulable siempre es la forma de clavarla (regla de negocio) */
+  estado.monitor = (esPortatil || elevacion >= 3) ? 'rojo' : 'ambar';
+  estado.lumbar = tieneLumbar ? 'verde' : 'rojo';
+  /* Nunca verde (regla de negocio: siempre vendemos reposapies):
+     rojo si hay deficit medido de mesa o jornada >8h; ambar como minimo */
+  estado.pies = (alzaPies > 0 || horas > 8) ? 'rojo' : 'ambar';
+  estado.munecas = horas >= 4 ? 'ambar' : 'verde';
+  estado.core = (horas >= 3 || edad >= 45) ? 'ambar' : 'verde';
+  estado.llamadas = llamadas ? 'ambar' : 'verde';
+  estado.papel = papel ? 'ambar' : 'verde';
+  /* La silla como zona propia (2026-09-13): comedor es crítico, básica y gaming
+     mejorables, ergonómica correcta (solo ajuste). */
+  /* Fusiona silla + lumbar + core: comedor y oficina básica sin lumbar → rojo;
+     gaming → ámbar; ergonómica → lo que diga el sentado activo (core). */
+  estado.silla = (tipoSilla==='comedor' || tipoSilla==='oficina') ? 'rojo'
+               : (tipoSilla==='gaming' ? 'ambar' : estado.core);
+  /* Siempre hay margen de mejora: los hábitos nunca están "terminados" */
+  if(!Object.values(estado).some(e=>e!=='verde')) estado.core = 'ambar';
+
+  const r = { h, edad, peso, horas, equipo, esPortatil, asiento, mesaIdeal, mesaReal, ojos,
+        desajusteMesa, alzaPies, elevacion, sillaReg, tipoSilla, estado };
+
+  /* renumerar zonas por severidad → lista y marcadores en orden 1..7 */
+  Object.keys(ZONAS)
+    .sort((a,b)=>ORDEN[estado[a]]-ORDEN[estado[b]])
+    .forEach((id,i)=>{ ZONAS[id].n = i+1; });
+
+  return r;
+}
+function calcular(){
+  R = computar();
+  /* Sinergia: los finders (sillas/perifericos) importan estas medidas */
+  try{ localStorage.setItem('ergonomiq-medidas',
+    JSON.stringify({h:R.h, peso:R.peso, horas:R.horas, fecha:new Date().toISOString()})); }catch(e){}
+  pintarResultados();
+}
+
+/* ============================================================
+   [SKIN-2] ESCENA LATERAL PARAMÉTRICA — se dibuja con los
+   números del usuario y reacciona a cada input.
+   ============================================================ */
+const PALETA = {
+  piel:'#e8b48f', pelo:'#4a3f35', ropa:'#5b6b8c', ropa2:'#48587a',
+  pantalon:'#2e3440', zapato:'#f0f2f5',
+  mueble:'#b98a5e', mueble2:'#9a7350', metal:'#3a4150', pantalla:'#2b303b',
+  pantallaCara:'#47536b', silla:'#343a46', silla2:'#454c5a',
+  /* Tonos de fondo: las extremidades del lado lejano van mas oscuras. Es el
+     truco que hace que una figura plana se lea con volumen. */
+  ropaLejos:'#3d4a66', pantalonLejos:'#232830', pielLejos:'#c9986f',
+  zapatoLejos:'#d7dae0', muebleLuz:'#cfa276'
+};
+const ESC = { W:560, H:400, FLOOR:372, K:2 };  /* K = px por cm */
+function cmY(cm){ return ESC.FLOOR - ESC.K*cm; }
+
+function claveEscena(r){
+  const base = r.equipo+'-'+(r.estado.monitor==='verde'?'ok':'baja')+'-'+(r.alzaPies>0?'con':'sin');
+  /* Silla de comedor: la escena «hoy» la muestra (sin ruedas ni regulación); el
+     «después» sigue con la silla de oficina del pack. Si faltara la variante,
+     se usa la escena normal. */
+  if(r.tipoSilla==='comedor' && CONFIG.escenas[base+'-comedor']) return base+'-comedor';
+  return base;
+}
+/* Escena 3D del estado en todas las vistas (wizard, resultados y detalle).
+   Las cotas con los centímetros del usuario van superpuestas. La escena
+   paramétrica queda solo como fallback si faltara una imagen. */
+function renderEscena(cont, preferirFoto, modo){
+  const r = R || computar();
+  const st = r.estado;
+
+  /* modo 'pack': el mismo puesto con todas las piezas del catálogo puestas
+     (escena <equipo>-pack). Cada número señala la pieza que corrige esa zona
+     y va en verde: es el «después» del cara a cara. */
+  const esPack = (modo === 'pack');
+  const clave = esPack ? r.equipo+'-pack' : claveEscena(r);
+  const esc = CONFIG.escenas[clave];
+  const estadoDe = id => esPack ? 'verde' : r.estado[id];
+  if(esPack && !(esc && esc.disponible)){ cont.innerHTML = ''; return; }
+  /* Decisión del usuario (2026-09-12): la escena 3D se ve SIEMPRE, también en
+     la vista en vivo del wizard. El parámetro preferirFoto se conserva por
+     compatibilidad; la paramétrica solo actúa si falta la imagen. */
+  if(esc && esc.disponible){
+    cont.innerHTML = '<img class="escena-img" src="assets/escenas/'+clave+'.webp?v='+ESC_VER+'" alt="'+(esPack ? 'Tu puesto con el pack puesto' : 'Tu puesto de trabajo')+'" width="1536" height="1024">';
+    /* Capa de anclas: punto sobre el cuerpo/equipo + línea discontinua hasta el
+       número, del color del estado — la misma geometría que la escena
+       paramétrica. viewBox en px de la imagen (3:2) para que el trazo no se
+       deforme. */
+    const IW = 1536, IH = 1024;
+    let anot = '<svg class="escena-anot" viewBox="0 0 '+IW+' '+IH+'" aria-hidden="true">';
+    for(const id in ZONAS){
+      const p = esc.markers && esc.markers[id];
+      if(!p) continue;
+      const col = 'var(--' + ({rojo:'bad', ambar:'warn', verde:'ok'}[estadoDe(id)]) + ')';
+      const ax = p[0]*IW/100, ay = p[1]*IH/100, mx = p[2]*IW/100, my = p[3]*IH/100;
+      anot += '<line x1="'+ax.toFixed(0)+'" y1="'+ay.toFixed(0)+'" x2="'+mx.toFixed(0)+'" y2="'+my.toFixed(0)+'" '+
+              'stroke="'+col+'" stroke-width="3.5" stroke-dasharray="10 10" opacity=".85"/>';
+      anot += '<circle cx="'+ax.toFixed(0)+'" cy="'+ay.toFixed(0)+'" r="8" fill="'+col+'" stroke="#fff" stroke-width="2.5"/>';
+    }
+    cont.insertAdjacentHTML('beforeend', anot+'</svg>');
+    for(const [id,z] of Object.entries(ZONAS)){
+      const p = esc.markers && esc.markers[id];
+      if(!p) continue;
+      const b = document.createElement('button');
+      b.className = 'marker '+estadoDe(id);
+      b.style.left = p[2]+'%'; b.style.top = p[3]+'%';
+      b.textContent = z.n;
+      b.setAttribute('aria-label', z.nombre);
+      b.addEventListener('click', ()=>abrirModal(id));
+      cont.appendChild(b);
+    }
+    const cotasImg = esc.cotas || (esPack ? [
+      {x:13, y:8,  t:'Pantalla a '+r.ojos+' cm'},
+      {x:13, y:17, t:'Mesa '+r.mesaReal+' cm'}
+    ].concat(r.alzaPies>0 ? [{x:13, y:26, t:'Reposapiés '+r.alzaPies+' cm'}] : []) : [
+      {x:13, y:8,  t:(r.peso? r.h+' cm · '+r.peso+' kg' : r.h+' cm')},
+      {x:13, y:17, t:'Ojos '+r.ojos+' cm'},
+      {x:13, y:26, t:'Mesa '+r.mesaReal+' cm'}
+    ].concat(r.alzaPies>0 ? [{x:13, y:35, t:'Reposapiés '+r.alzaPies+' cm'}] : []));
+    for(const cta of cotasImg){
+      const d = document.createElement('div');
+      d.className = 'cota'; d.style.left = cta.x+'%'; d.style.top = cta.y+'%';
+      d.textContent = (typeof cta.t==='function') ? cta.t(r) : cta.t;
+      cont.appendChild(d);
+    }
+    return;
+  }
+
+  const slouch = st.monitor==='rojo' ? 1 : 0;
+
+  const ySeat = cmY(r.asiento);
+  const yDesk = cmY(r.mesaReal);
+  const yEye  = cmY(r.ojos);
+  const ySho  = cmY(r.ojos-14);
+  const torsoW = r.peso ? Math.max(20, Math.min(34, 22+(r.peso-70)*0.15)) : 24;
+
+  const hipX = 196, hipY = ySeat-8;
+  const shX = 206 + slouch*8, headX = shX+16 + slouch*10;
+  const kneeX = 272, kneeY = ySeat-4;
+  const alzaPx = r.alzaPies>0 ? Math.max(8, ESC.K*r.alzaPies) : 0;
+  const footY = ESC.FLOOR - alzaPx - 4;
+  const footX = 288;
+  const elbX = 240, elbY = yDesk-4;
+  const handX = 330, handY = yDesk-8;
+
+  const conPortatil = (r.equipo==='portatil' || r.equipo==='ambos');
+  const conMonitor  = (r.equipo==='monitor'  || r.equipo==='ambos');
+  const yLapTop = cmY(r.mesaReal+24);
+  const yMonTop = cmY(r.mesaReal+45);
+  const targetX = conMonitor ? 478 : 396;
+  const targetY = conMonitor ? yMonTop+6 : yLapTop+2;
+
+  /* Capsula conica: ancho w1 en la raiz y w2 en el extremo, con casquetes
+     redondos. Es lo que separa un miembro dibujado de un palote. */
+  const cap = (x1,y1,x2,y2,w1,w2,fill,op) => {
+    const dx=x2-x1, dy=y2-y1, L=Math.hypot(dx,dy)||1, nx=-dy/L, ny=dx/L;
+    const p=(x,y)=>x.toFixed(1)+','+y.toFixed(1);
+    return '<path d="M'+p(x1+nx*w1/2,y1+ny*w1/2)+' L'+p(x2+nx*w2/2,y2+ny*w2/2)+
+      ' A'+(w2/2)+' '+(w2/2)+' 0 0 1 '+p(x2-nx*w2/2,y2-ny*w2/2)+
+      ' L'+p(x1-nx*w1/2,y1-ny*w1/2)+
+      ' A'+(w1/2)+' '+(w1/2)+' 0 0 1 '+p(x1+nx*w1/2,y1+ny*w1/2)+' Z" fill="'+fill+'"'+
+      (op?' opacity="'+op+'"':'')+'/>';
+  };
+
+  /* Circulo de articulacion: cierra la union entre dos capsulas */
+  const art = (x,y,d,fill) => '<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(d/2)+'" fill="'+fill+'"/>';
+
+  let s = '<svg class="escena-svg" viewBox="0 0 '+ESC.W+' '+ESC.H+'" role="img" aria-label="Tu puesto de trabajo, dibujado con tus medidas">';
+  s += '<defs>'+
+    '<radialGradient id="gBlob" cx="46%" cy="40%" r="62%">'+
+      '<stop offset="0%" stop-color="var(--accent-soft)" stop-opacity=".9"/>'+
+      '<stop offset="100%" stop-color="var(--accent-soft)" stop-opacity="0"/>'+
+    '</radialGradient>'+
+    '<radialGradient id="gSombra" cx="50%" cy="50%" r="50%">'+
+      '<stop offset="0%" stop-color="#0b0c0f" stop-opacity=".22"/>'+
+      '<stop offset="100%" stop-color="#0b0c0f" stop-opacity="0"/>'+
+    '</radialGradient>'+
+    '<linearGradient id="gPantalla" x1="0" y1="0" x2="0.6" y2="1">'+
+      '<stop offset="0%" stop-color="#66748f"/><stop offset="100%" stop-color="#3a4459"/>'+
+    '</linearGradient>'+
+    '<linearGradient id="gMesa" x1="0" y1="0" x2="0" y2="1">'+
+      '<stop offset="0%" stop-color="#d2a97d"/><stop offset="55%" stop-color="#b98a5e"/>'+
+      '<stop offset="100%" stop-color="#a2764e"/>'+
+    '</linearGradient>'+
+    '<linearGradient id="gCamisa" x1="0" y1="0" x2="1" y2="0.4">'+
+      '<stop offset="0%" stop-color="#6a7b9d"/><stop offset="100%" stop-color="#516183"/>'+
+    '</linearGradient>'+
+  '</defs>';
+
+  /* ---------- fondo ---------- */
+  s += '<ellipse cx="286" cy="192" rx="252" ry="180" fill="url(#gBlob)"/>';
+  s += '<ellipse cx="372" cy="146" rx="132" ry="98" fill="var(--panel2)" opacity=".5"/>';
+  s += '<line x1="16" y1="'+ESC.FLOOR+'" x2="544" y2="'+ESC.FLOOR+'" stroke="var(--line)" stroke-width="2.5"/>';
+  s += '<ellipse cx="200" cy="'+(ESC.FLOOR+4)+'" rx="92" ry="13" fill="url(#gSombra)"/>';
+  s += '<ellipse cx="'+(footX+6)+'" cy="'+(ESC.FLOOR+3)+'" rx="40" ry="8" fill="url(#gSombra)"/>';
+  s += '<ellipse cx="430" cy="'+(ESC.FLOOR+4)+'" rx="122" ry="10" fill="url(#gSombra)"/>';
+
+  /* ---------- mesa ---------- */
+  s += '<rect x="296" y="'+(yDesk-7)+'" width="248" height="12" rx="2.5" fill="url(#gMesa)"/>';
+  s += '<rect x="296" y="'+(yDesk-7)+'" width="248" height="2.5" rx="1.2" fill="#e0bd93" opacity=".85"/>';
+  s += '<rect x="310" y="'+(yDesk+5)+'" width="7" height="'+(ESC.FLOOR-yDesk-5)+'" rx="2" fill="#8f6a48"/>';
+  s += '<rect x="528" y="'+(yDesk+5)+'" width="7" height="'+(ESC.FLOOR-yDesk-5)+'" rx="2" fill="#8f6a48"/>';
+  /* alfombrilla */
+  s += '<rect x="322" y="'+(yDesk-9)+'" width="74" height="3" rx="1.5" fill="#3a4150" opacity=".55"/>';
+  /* planta al fondo de la mesa */
+  s += '<path d="M508 '+(yDesk-8)+' h20 l-3 -16 h-14 z" fill="#c98a6a"/>';
+  s += '<path d="M518 '+(yDesk-24)+' q-16 -12 -6 -26 q10 6 8 26z" fill="#6f8a7a"/>';
+  s += '<path d="M518 '+(yDesk-24)+' q16 -10 8 -24 q-12 6 -10 24z" fill="#5f7d6a"/>';
+
+  /* ---------- pantallas ---------- */
+  if(conPortatil){
+    s += '<rect x="316" y="'+(yDesk-11)+'" width="70" height="5" rx="2" fill="#4a5164"/>';
+    s += '<path d="M384 '+(yDesk-9)+' L399 '+yLapTop+' L407 '+(yLapTop+4)+' L392 '+(yDesk-5)+' Z" fill="#2b303b"/>';
+    s += '<path d="M386 '+(yDesk-10)+' L399 '+(yLapTop+2)+' L403 '+(yLapTop+4)+' L390 '+(yDesk-9)+' Z" fill="url(#gPantalla)"/>';
+  }
+  if(conMonitor){
+    s += '<rect x="438" y="'+yMonTop+'" width="84" height="'+(yDesk-28-yMonTop)+'" rx="5" fill="#23272f"/>';
+    s += '<rect x="443" y="'+(yMonTop+5)+'" width="74" height="'+(yDesk-40-yMonTop)+'" rx="2" fill="url(#gPantalla)"/>';
+    s += '<path d="M446 '+(yMonTop+8)+' l22 0 l-22 26 z" fill="#ffffff" opacity=".10"/>';
+    s += '<rect x="475" y="'+(yDesk-28)+'" width="10" height="18" rx="3" fill="#3a4150"/>';
+    s += '<ellipse cx="480" cy="'+(yDesk-9)+'" rx="30" ry="5" fill="#3a4150"/>';
+  }
+  if(conMonitor && !conPortatil){
+    s += '<rect x="322" y="'+(yDesk-10)+'" width="64" height="5" rx="2" fill="#4a5164"/>';
+  }
+
+  /* ---------- silla ---------- */
+  const yResp = cmY(r.asiento+50);
+  s += '<path d="M198 352 L166 366 M198 352 L232 366 M198 352 L150 360 M198 352 L248 360" '+
+       'stroke="#454c5a" stroke-width="7" stroke-linecap="round" fill="none"/>';
+  ['166,368','232,368','150,362','248,362'].forEach(function(c){
+    const xy=c.split(',');
+    s += '<ellipse cx="'+xy[0]+'" cy="'+xy[1]+'" rx="6" ry="4.5" fill="#2f3540"/>';
+  });
+  s += '<rect x="193" y="'+(ySeat+10)+'" width="11" height="'+(346-ySeat)+'" rx="4" fill="#4d5563"/>';
+  /* asiento con canto */
+  s += '<rect x="148" y="'+ySeat+'" width="104" height="13" rx="6" fill="#3a4150"/>';
+  s += '<rect x="148" y="'+ySeat+'" width="104" height="5" rx="2.5" fill="#4b5364"/>';
+  /* respaldo de malla, ligeramente reclinado */
+  s += '<path d="M168 '+ySeat+' q-10 -26 -4 -'+(ySeat-yResp)+' q14 -10 26 -2 q-8 30 -4 '+(ySeat-yResp-10)+'z" fill="#3a4150"/>';
+  for(let k=0;k<5;k++){
+    const yy = yResp + 10 + k*((ySeat-yResp-12)/5);
+    s += '<line x1="167" y1="'+yy.toFixed(0)+'" x2="187" y2="'+(yy-2).toFixed(0)+'" stroke="#59606f" stroke-width="1.4" opacity=".8"/>';
+  }
+  /* cojin lumbar: es la zona 2 del diagnostico */
+  s += '<path d="M184 '+cmY(r.asiento+24)+' q13 11 0 22" stroke="'+
+       (r.estado.lumbar==='verde' ? 'var(--ok)' : '#5b6470')+'" stroke-width="8" '+
+       'stroke-linecap="round" fill="none"/>';
+  /* reposabrazos */
+  s += '<path d="M196 '+(ySeat-6)+' q0 -22 20 -22 h34" stroke="#454c5a" stroke-width="7" '+
+       'stroke-linecap="round" fill="none"/>';
+
+  /* reposapies, cuando el calculo lo prescribe */
+  if(alzaPx>0){
+    s += '<path d="M258 '+ESC.FLOOR+' h74 l-8 -'+alzaPx+' h-58 z" fill="var(--accent)" opacity=".9"/>';
+  }
+
+  /* ---------- persona ---------- */
+  /* lado lejano, en tono mas oscuro: es lo que da volumen */
+  s += cap(hipX-6, hipY+12, kneeX-8, kneeY+6, 22, 17, PALETA.pantalonLejos);
+  s += art(kneeX-8, kneeY+6, 17, PALETA.pantalonLejos);
+  s += cap(kneeX-8, kneeY+6, footX-10, footY-3, 15, 10, PALETA.pantalonLejos);
+  s += '<path d="M'+(footX-19)+' '+(footY+1)+' q10 -8 20 -2 l3 6 h-25 z" fill="'+PALETA.zapatoLejos+'"/>';
+  s += cap(shX-6, ySho+14, elbX-8, elbY+4, 13, 11, PALETA.ropaLejos);
+  s += art(elbX-8, elbY+4, 11, PALETA.ropaLejos);
+  s += cap(elbX-8, elbY+4, handX-12, handY+3, 11, 8, PALETA.ropaLejos);
+  s += '<ellipse cx="'+(handX-8)+'" cy="'+(handY+4)+'" rx="6" ry="4.5" fill="'+PALETA.pielLejos+'"/>';
+
+  /* pierna cercana */
+  s += cap(hipX, hipY+6, kneeX, kneeY, 26, 19, PALETA.pantalon);
+  s += art(kneeX, kneeY, 19, PALETA.pantalon);
+  s += cap(kneeX, kneeY, footX, footY-4, 17, 11, PALETA.pantalon);
+  s += '<path d="M'+(footX-11)+' '+(footY-1)+' q12 -9 23 -2 l4 7 q-14 3 -27 0 z" fill="'+PALETA.zapato+'"/>';
+  s += '<path d="M'+(footX-11)+' '+(footY+4)+' q14 3 27 0 l1 2 q-15 3 -29 0 z" fill="#c9ced6"/>';
+
+  /* torso: capsula conica de cadera a hombro */
+  s += cap(hipX, hipY, shX, ySho+8, torsoW+4, torsoW-4, 'url(#gCamisa)');
+  s += art(hipX, hipY+2, torsoW+2, 'url(#gCamisa)');
+  s += art(shX, ySho+8, torsoW-4, 'url(#gCamisa)');
+  /* cuello, antes que la cabeza */
+  s += art(shX+1, ySho+4, torsoW-2, 'url(#gCamisa)');
+  s += cap(shX+3, ySho+1, headX-5, yEye+13, 14, 11, PALETA.pielLejos);
+  /* brazo cercano */
+  s += cap(shX+2, ySho+13, elbX, elbY, 14, 12, PALETA.ropa2);
+  s += art(elbX, elbY, 12, PALETA.ropa2);
+  s += cap(elbX, elbY, handX-4, handY, 12, 9, PALETA.ropa2);
+  s += '<ellipse cx="'+(handX+2)+'" cy="'+(handY+1)+'" rx="7.5" ry="5.5" fill="'+PALETA.piel+'"/>';
+  /* cabeza: pelo detras, cara encima, flequillo y oreja */
+  s += '<ellipse cx="'+(headX-1)+'" cy="'+(yEye-2)+'" rx="16.5" ry="17.5" fill="'+PALETA.pelo+'"/>';
+  s += '<ellipse cx="'+(headX+2)+'" cy="'+(yEye+2)+'" rx="14.5" ry="15.5" fill="'+PALETA.piel+'"/>';
+  s += '<path d="M'+(headX-13)+' '+(yEye-5)+' q3 -13 16 -13 q11 0 14 10 q-9 -7 -17 -4 t-13 7z" fill="'+PALETA.pelo+'"/>';
+  s += '<ellipse cx="'+(headX-6)+'" cy="'+(yEye+4)+'" rx="3.2" ry="4" fill="'+PALETA.pielLejos+'"/>';
+  s += '<circle cx="'+(headX+9)+'" cy="'+(yEye)+'" r="1.9" fill="#2f2a26"/>';
+  s += '<path d="M'+(headX+13)+' '+(yEye+7)+' q3 1 4 4" stroke="'+PALETA.pielLejos+'" stroke-width="1.6" fill="none" stroke-linecap="round"/>';
+
+  /* ---------- linea de vision ---------- */
+  const tono = st.monitor==='verde' ? 'ok' : (st.monitor==='ambar' ? 'warn' : 'bad');
+  const yFin = st.monitor==='rojo' ? targetY : yEye;
+  s += '<line x1="'+(headX+13)+'" y1="'+yEye+'" x2="'+targetX+'" y2="'+yFin+'" '+
+       'stroke="var(--'+tono+')" stroke-width="2.4" stroke-linecap="round" '+
+       (st.monitor==='verde'?'':'stroke-dasharray="7 6"')+' />';
+  s += '<circle cx="'+targetX+'" cy="'+yFin+'" r="4" fill="var(--'+tono+')"/>';
+  /* Cota de estatura: línea vertical con flechas del suelo a la coronilla, como
+     en la referencia, en vez de una etiqueta suelta flotando. */
+  const xCota = 46, yAlto = yEye - 21;
+  s += '<line x1="'+xCota+'" y1="'+yAlto+'" x2="'+xCota+'" y2="'+ESC.FLOOR+'" '+
+       'stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="4 4"/>';
+  s += '<path d="M'+(xCota-5)+' '+(yAlto+7)+' L'+xCota+' '+yAlto+' L'+(xCota+5)+' '+(yAlto+7)+
+       ' M'+(xCota-5)+' '+(ESC.FLOOR-7)+' L'+xCota+' '+ESC.FLOOR+' L'+(xCota+5)+' '+(ESC.FLOOR-7)+
+       '" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>';
+  s += '<line x1="'+(xCota-7)+'" y1="'+yAlto+'" x2="'+(headX-16)+'" y2="'+yAlto+'" '+
+       'stroke="var(--line-2)" stroke-width="1"/>';
+
+  /* Cada zona tiene un ANCLA (el punto exacto del cuerpo o del equipo al que se
+     refiere) y un DESPLAZAMIENTO para su número, de modo que la etiqueta no tape
+     lo que está señalando. La línea discontinua entre ambos, del color del
+     estado, es lo que hace legible el diagnóstico de un vistazo. */
+  const ANCL = {
+    monitor:  [targetX, targetY],
+    lumbar:   [hipX - 12, cmY(r.asiento + 26)],
+    munecas:  [handX + 2, handY],
+    pies:     [footX + 4, footY - 2],
+    core:     [hipX + 8, hipY + 6],
+    llamadas: [headX + 4, yEye + 10],
+    papel:    [conMonitor ? 430 : 424, yDesk - 6],
+    silla:    [hipX - 34, cmY(r.asiento + 44)]
+  };
+  const DESP = {
+    monitor:  [30, -34], lumbar:  [-46, -10], munecas: [6, -38], pies: [30, 26],
+    core:     [-40, 30],  llamadas:[26, -38], papel:   [14, -34], silla: [-40, -30]
+  };
+  for(const id in ANCL){
+    if(!ZONAS[id]) continue;
+    const a = ANCL[id], d = DESP[id];
+    const col = 'var(--' + ({rojo:'bad', ambar:'warn', verde:'ok'}[r.estado[id]]) + ')';
+    s += '<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+(a[0]+d[0])+'" y2="'+(a[1]+d[1])+'" '+
+         'stroke="'+col+'" stroke-width="1.5" stroke-dasharray="4 4" opacity=".85"/>';
+    s += '<circle cx="'+a[0]+'" cy="'+a[1]+'" r="3.2" fill="'+col+'"/>';
+  }
+
+  s += '</svg>';
+  cont.innerHTML = s;
+
+  /* marcadores y cotas — misma geometría, se mueven con cada input */
+  const px = (x,y)=>({x: x/ESC.W*100, y: y/ESC.H*100});
+  const posiciones = {};
+  for(const id in ANCL) posiciones[id] = px(ANCL[id][0] + DESP[id][0], ANCL[id][1] + DESP[id][1]);
+  for(const [id,z] of Object.entries(ZONAS)){
+    const p = posiciones[id];
+    const b = document.createElement('button');
+    b.className = 'marker '+ (r.estado[id]);
+    b.style.left = p.x+'%'; b.style.top = p.y+'%';
+    b.textContent = z.n;
+    b.setAttribute('aria-label', z.nombre);
+    b.addEventListener('click', ()=>abrirModal(id));
+    cont.appendChild(b);
+  }
+  const cotas = [
+    {x:px(xCota+9,0).x,   y:px(0,(yAlto+ESC.FLOOR)/2).y, t:r.h+' cm'},
+    {x:px(96,0).x,        y:px(0,ySeat+20).y, t:'Asiento '+r.asiento+' cm'},
+    {x:93,                y:px(0,yDesk-18).y, t:'Mesa '+r.mesaReal+' cm'},
+    {x:px(headX-74,0).x,  y:px(0,yEye-24).y,  t:'Ojos '+r.ojos+' cm'}
+  ];
+  if(r.alzaPies>0) cotas.push({x:px(footX+30,0).x, y:px(0,ESC.FLOOR-alzaPx-16).y, t:'Reposapiés '+r.alzaPies+' cm'});
+  for(const c of cotas){
+    const d = document.createElement('div');
+    d.className = 'cota'; d.style.left = c.x+'%'; d.style.top = c.y+'%'; d.textContent = c.t;
+    cont.appendChild(d);
+  }
+}
+
+/* Evaluación en vivo */
+function preview(){
+  R = computar();
+  renderEscena($('escenaEval'));
+  const n = Object.keys(ZONAS).filter(id=>R.estado[id]!=='verde').length;
+  const props = idsPack().filter(i=>PRODUCTOS[i].canal==='propio').slice(0,3)
+    .map(i=>'<b>'+PRODUCTOS[i].nombre.toLowerCase()+'</b>');
+  $('liveHint').innerHTML = 'Con tus datos ya detectamos <span class="chip rojo">'+n+
+    ' zonas mejorables</span>'+(props.length?' — apuntan a: '+props.join(', ')+'.':'.')+
+    ' Completa los pasos y te damos el plan exacto con tus medidas.';
+}
+['estatura','peso','edad','horas','equipo','mesaReg','mesaAltura','tipoSilla','llamadas','papel']
+  .forEach(id=>{ $(id).addEventListener('input', preview); $(id).addEventListener('change', preview); });
+
+/* ---------- Resultados ---------- */
+function pintarResultados(){
+  $('resVacio').hidden = true;
+  $('resContenido').hidden = false;
+
+  const rojos = Object.keys(ZONAS).filter(id=>R.estado[id]==='rojo').length;
+  const ambar = Object.keys(ZONAS).filter(id=>R.estado[id]==='ambar').length;
+  const bc = $('badgeConteo');
+  bc.className = 'badge rojo';
+  bc.textContent = (rojos+ambar)+' aspectos a mejorar';
+
+  const orden = Object.keys(ZONAS).sort((a,b)=>ZONAS[a].n-ZONAS[b].n);
+  let sepVerde = false;
+  $('listaItems').innerHTML = orden.map(id=>{
+    const z = ZONAS[id], est = R.estado[id], info = contenidoZona(id);
+    let pre = '';
+    if(est==='verde' && !sepVerde){ sepVerde = true;
+      pre = '<div class="microtit" style="margin:16px 0 10px">✓ En buen estado</div>'; }
+    return pre+'<button class="item '+est+'" data-zona="'+id+'">'+
+      '<span class="num">'+z.n+'</span>'+
+      '<span class="cuerpo"><span class="fila1"><span class="nombre">'+z.nombre+'</span>'+
+      '<span class="chip '+est+'">'+CHIP[est]+'</span></span>'+
+      '<span class="desc">'+info.resumen+'</span></span>'+
+      '<span class="chev">›</span></button>';
+  }).join('');
+  document.querySelectorAll('.item').forEach(b=>b.addEventListener('click', ()=>abrirModal(b.dataset.zona)));
+  /* Precarga de los pares problema/solución de las zonas con aviso, en tiempo muerto:
+     el modal abre al instante en vez de esperar dos descargas (2026-09-16). */
+  const precargar = ()=>orden.filter(id=>R.estado[id]!=='verde').forEach(id=>['mal','bien'].forEach(m=>{
+    const src = (diagrama(id,m).match(/src="([^"]+)"/)||[])[1]; if(src){ const im = new Image(); im.src = src; } }));
+  (window.requestIdleCallback || (fn=>setTimeout(fn,600)))(precargar);
+
+  $('statsMedidas').innerHTML =
+    stat(R.asiento+' cm','Altura de asiento') + stat(R.mesaIdeal+' cm','Mesa ideal') +
+    stat(R.ojos+' cm','Tu línea de ojos') +
+    (R.alzaPies>0 ? stat(R.alzaPies+' cm','Alza de reposapiés') : '') +
+    (R.elevacion>=3 && !R.esPortatil ? stat('+'+R.elevacion+' cm','Elevar pantalla') : '');
+
+  let nota = 'Con '+R.horas+' h/día sentado, las pausas de 2-3 min cada 45-60 min importan tanto como el equipo.';
+  if(R.edad>=45) nota += ' A partir de los 45, el sentado activo por intervalos da aún más rendimiento.';
+  if(R.peso>=95) nota += ' Para tu peso, elige cojín y disco de densidad alta.';
+  $('notaPersonal').textContent = nota;
+
+  renderEscena($('escenaRes'), true);
+  renderEscena($('escenaPack'), true, 'pack');
+  $('caraHoy').textContent = (rojos+ambar)+' zonas a mejorar';
+  $('caraPack').textContent = Object.keys(ZONAS).length+' zonas mejoradas';
+  renderEscena($('escenaEval'), false);
+  pintarPack();
+}
+function stat(v,k){ return '<div class="stat"><div class="v">'+v+'</div><div class="k">'+k+'</div></div>'; }
+
+/* ---------- Tarjeta de producto ---------- */
+/* [SKIN] icono placeholder por producto — se sustituye por foto real (img) de la ficha */
+function iconoProd(id){
+  const I = {
+    soportePortatil:'<path d="M4 17 L20 9 M4 17 L20 17 M8 17 v-3 M14 17 v-5"/>',
+    elevadorMonitor:'<rect x="6" y="4" width="12" height="8" rx="1"/><path d="M12 12 v2 M5 17 h14 M7 20 h10 M7 17 v3 M17 17 v3"/>',
+    cojinLumbar:'<rect x="7" y="4" width="10" height="16" rx="5"/><path d="M7 12 q5 -3 10 0"/>',
+    reposapies:'<path d="M4 18 L20 12 L20 18 Z M4 21 h16"/>',
+    reposamunecas:'<rect x="4" y="12" width="16" height="5" rx="2.5"/><path d="M8 9 q4 -3 8 0"/>',
+    atril:'<path d="M6 20 L12 5 L18 20 M8 14 h8"/><rect x="10" y="8" width="7" height="9" rx="1" transform="rotate(12 13 12)"/>',
+    discoSentado:'<ellipse cx="12" cy="14" rx="9" ry="4"/><ellipse cx="12" cy="11" rx="9" ry="4"/>',
+    tecladoRaton:'<rect x="3" y="12" width="12" height="6" rx="1.5"/><ellipse cx="19.5" cy="15" rx="2.5" ry="3.5"/>',
+    sillaErgo:'<path d="M8 4 q-2 8 0 11 h7 M15 15 v4 M11 19 h8 M8 8 h6"/>',
+    mesaElevable:'<path d="M4 12 h16 M6 12 v8 M18 12 v8 M12 9 v-5 M9.5 6.5 L12 4 L14.5 6.5"/>',
+    convertidorEscritorio:'<path d="M3 18.5 h18 M6 12.5 h12 M8 12.5 v6 M16 12.5 v6 M9 12.5 q3 -4.5 6 0"/>',
+    brazoMonitor:'<rect x="10" y="4" width="10" height="7" rx="1"/><path d="M10 9 L6 13 L6 19 M4 19 h4"/>',
+    auriculares:'<path d="M5 14 a7 7 0 0 1 14 0"/><rect x="4" y="13" width="3.5" height="6" rx="1.5"/><rect x="16.5" y="13" width="3.5" height="6" rx="1.5"/><path d="M18 19 q0 3 -4 3"/>',
+    ratonVertical:'<path d="M9 20 q-3 -6 1 -12 q3 -4 6 -1 q3 3 0 8 q-2 4 -7 5 Z M13 9 l2 2"/>'
+  };
+  return '<svg viewBox="0 0 24 24">'+(I[id]||'<rect x="5" y="5" width="14" height="14" rx="2"/>')+'</svg>';
+}
+/* URL de la tienda propia. Vacia = productos aun no a la venta: se oculta el CTA
+   del pack y se avisa al usuario en lugar de enlazar a ninguna parte. */
+const TIENDA_URL = '';
+function tarjetaProducto(pid, conLink){
+  /* Sin tienda abierta, un producto propio no puede presentarse como comprable. */
+  if(PRODUCTOS[pid].canal==='propio' && !TIENDA_URL) conLink = false;
+  const p = PRODUCTOS[pid];
+  const foto = p.img ? '<img src="'+p.img+'" alt="'+p.nombre+'">' : iconoProd(pid);
+  let h = '<div class="prod"><div class="foto">'+foto+'</div>'+
+    '<span class="canal '+p.canal+'">'+(p.canal==='propio'?CONFIG.marca:'Amazon')+'</span>'+
+    '<span class="nom">'+p.nombre+'</span>';
+  h += (p.canal==='propio')
+    ? (p.precio ? '<div class="linea2"><span class="precio">'+p.precio+'</span></div>' : '')
+    : '<div class="linea2"><span class="precio amz">Precio y valoraciones en Amazon</span></div>';
+  h += '<span class="desc">'+p.desc+'</span>';
+  if(p.specs && p.specs.length) h += '<ul class="specs">'+p.specs.map(s=>'<li>'+s+'</li>').join('')+'</ul>';
+  if(conLink){
+    h += p.finder
+      ? '<a class="link-propio" href="'+p.finder+'">Encuentra el tuyo por tus medidas →</a>'
+      : '<a class="link-'+p.canal+'" href="'+p.url+'"'+
+        (p.canal==='amazon' ? ' target="_blank" rel="sponsored nofollow noopener"' : '')+
+        '>'+(p.canal==='propio'?'Ver producto':'Buscar en Amazon')+'</a>';
+  }
+  h += '</div>';
+  return h;
+}
+
+/* ---------- Pack ---------- */
+function idsPack(){
+  const ids = [];
+  if(R.estado.monitor!=='verde') ids.push(R.esPortatil ? 'soportePortatil' : 'elevadorMonitor');
+  if(R.estado.lumbar!=='verde') ids.push('cojinLumbar');
+  if(R.estado.pies!=='verde') ids.push('reposapies');
+  if(R.estado.munecas!=='verde') ids.push('reposamunecas');
+  if(R.estado.papel!=='verde') ids.push('atril');
+  if(R.estado.core!=='verde') ids.push('discoSentado');
+  return ids;
+}
+function pintarPack(){
+  const propios = idsPack().filter(i=>PRODUCTOS[i].canal==='propio');
+  if(propios.length < 2){ $('cardPack').hidden = true; return; }
+  $('packItems').innerHTML = propios.map(i=>tarjetaProducto(i, false)).join('');
+  if(TIENDA_URL){
+    $('packCta').textContent = 'Ver mi pack de '+propios.length+' piezas';
+    $('packCta').href = TIENDA_URL;
+    $('packCta').hidden = false;
+    $('packImg').hidden = true;
+    $('notaTienda').hidden = true;
+  } else {
+    $('packCta').hidden = true;
+    $('packImg').hidden = false;
+    $('notaTienda').hidden = false;
+  }
+  $('cardPack').hidden = false;
+}
+
+/* ---------- Contenido por zona ---------- */
+function contenidoZona(id){
+  const r = R || {};
+  switch(id){
+    case 'monitor':
+      if(r.esPortatil) return {
+        resumen:'La pantalla del portátil queda muy por debajo de tu línea de ojos.',
+        problema:'La pantalla del portátil queda ~'+Math.max(10,(r.ojos-(r.mesaReal+24)))+' cm por debajo de tu línea de ojos ('+r.ojos+' cm). El cuello trabaja flexionado toda la jornada.',
+        solucion:'Dos piezas: <b>subir la pantalla</b> con un soporte hasta tu línea de ojos y <b>bajar las manos</b> con teclado y ratón externos.',
+        pasos:['Coloca un soporte de portátil hasta que el borde superior de la pantalla quede a '+r.ojos+' cm del suelo.','Conecta teclado y ratón externos — las manos se quedan a la altura de la mesa.','Mantén la pantalla a un brazo de distancia (~50-70 cm).'],
+        tips:['Retracción suave de barbilla: 5 repeticiones cuando notes la cabeza adelantada.','Gira el cuello despacio a cada lado en las pausas (5 por lado).'],
+        productos:['soportePortatil','tecladoRaton','brazoMonitor']};
+      if(r.elevacion>=3) return {
+        resumen:'El monitor está ~'+r.elevacion+' cm demasiado bajo.',
+        problema:'El borde superior de tu monitor debería estar a <b>'+r.ojos+' cm del suelo</b> y está ~'+r.elevacion+' cm por debajo. Cada mirada es una flexión de cuello.',
+        solucion:'Eleva el monitor ~'+r.elevacion+' cm con un elevador para alinear el borde superior con tus ojos.',
+        pasos:['Coloca un elevador de ~'+r.elevacion+' cm bajo el monitor.','Comprueba que el borde superior queda en tu línea de ojos ('+r.ojos+' cm).','Pantalla a un brazo de distancia, sin reflejos frontales.'],
+        tips:['Retracción suave de barbilla: 5 repeticiones cuando notes la cabeza adelantada.','Gira el cuello despacio a cada lado en las pausas (5 por lado).'],
+        productos:['elevadorMonitor','brazoMonitor']};
+      return {resumen:'Verifica el borde superior: debe estar a '+(r.ojos||'—')+' cm exactos (tu línea de ojos).',
+        problema:'Un monitor apoyado directo en la mesa rara vez queda exacto: el borde superior debe estar a <b>'+(r.ojos||'—')+' cm del suelo</b>, y unos pocos cm arriba o abajo pasan factura al cuello a lo largo de la jornada.',
+        solucion:'Un <b>elevador regulable</b> te deja clavar la altura exacta — y de regalo, espacio de almacenaje bajo la pantalla.',
+        pasos:['Mide del suelo al borde superior de tu pantalla.','Ajusta el elevador hasta dejarlo a '+(r.ojos||'—')+' cm.','Pantalla a un brazo de distancia (50-70 cm).'],
+        tips:['Retracción suave de barbilla: 5 repeticiones cuando notes la cabeza adelantada.'],
+        productos:['elevadorMonitor','brazoMonitor']};
+    case 'silla':
+      if(r.tipoSilla==='comedor') return {
+        resumen:'Silla de comedor: la pieza que más te está costando.',
+        problema:'Una silla de comedor no regula altura ni profundidad, tiene el asiento duro y el respaldo recto: obliga a la espalda y a las piernas a adaptarse a la mesa, no al revés. Es el punto de partida de casi todo lo demás.',
+        solucion:'Una <b>silla de oficina regulable</b>: altura, profundidad de asiento y lumbar ajustables. El finder te enseña las que cubren tu estatura y tus horas. Mientras llega: cojín lumbar y disco de asiento.',
+        pasos:['Busca un asiento que llegue a '+r.asiento+' cm del suelo (tu altura poplítea).','Lumbar regulable en altura y respaldo que se recline entre 95 y 110°.','Mientras tanto: cojín lumbar en la curva de la espalda baja y disco de asiento para ganar altura y activar el core.'],
+        tips:['Hasta que llegue: levántate cada 45 min. La silla de comedor castiga más cuanto más quieto estés.','Báscula pélvica sentado: 8-10 repeticiones lentas.'],
+        productos:['sillaErgo','cojinLumbar','discoSentado']};
+      if(r.tipoSilla==='gaming') return {
+        resumen:'Silla gaming: cómoda al principio, mala para '+(r.horas||8)+' h de trabajo.',
+        problema:'Asiento tipo baquet que hunde la pelvis, cojín lumbar de serie mal colocado y respaldo alto que invita a reclinarse: para jugar vale, para teclear ocho horas no.',
+        solucion:'Para jornadas largas, una <b>silla de oficina con lumbar regulable</b> y asiento plano. Si te la quedas, cojín lumbar a la altura correcta y asiento a codos 90°.',
+        pasos:['Quita el cojín de serie y pon un cojín lumbar en la curva de la espalda baja.','Sube el asiento hasta codos a 90° sobre la mesa.','Disco de sentado activo en tramos de 15-20 min: el baquet no deja moverse.','Con más de 6 h al día, mira el finder de sillas.'],
+        tips:['Reclínate a 100-110° en llamadas y lecturas; recto para teclear.'],
+        productos:['sillaErgo','cojinLumbar','discoSentado']};
+      if(r.tipoSilla==='oficina') return {
+        resumen:'Silla básica sin lumbar: la espalda baja va sin apoyo.',
+        problema:'Regula la altura, y eso ya es mucho. Pero sin lumbar ni profundidad de asiento regulables, la curva lumbar la sostiene la musculatura y, al fatigarse, llega el desplome hacia delante.',
+        solucion:'Añade un <b>cojín lumbar</b> ahora y un <b>disco de sentado activo</b> para las jornadas largas. Cuando toque renovar, <b>silla con lumbar y profundidad regulables</b>.',
+        pasos:['Asiento a '+r.asiento+' cm del suelo (codos a 90° sobre la mesa).','Cojín lumbar en la curva de la espalda baja: la espalda toca el respaldo sin hueco.','Disco en tramos de 15-20 min; alarma cada 45-60 min para levantarte.'],
+        tips:['Báscula pélvica sentado: 8-10 repeticiones lentas.','Comprueba la altura una vez al mes: las sillas básicas bajan solas.'],
+        productos:['cojinLumbar','discoSentado','sillaErgo']};
+      return {resumen:(r.estado && r.estado.core!=='verde') ? 'Buena silla. Toca alternar postura: ninguna es buena si es permanente.' : 'Silla ergonómica: bien elegida. Ajústala a tus medidas.',
+        problema:'Tienes la silla adecuada. Lo que falla en el 80 % de los casos es el ajuste (asiento bajo, lumbar donde no toca, brazos que chocan con la mesa) y la postura permanente: '+(r.horas||8)+' h quieto cansan hasta en la mejor silla.',
+        solucion:'Asiento a <b>'+r.asiento+' cm</b>, lumbar en la curva de la espalda baja, brazos a la altura de la mesa. Y <b>sentado activo</b> con un disco en intervalos cortos, más pausas de 2-3 min cada 45-60.',
+        pasos:['Asiento a '+r.asiento+' cm del suelo.','Profundidad: 2-3 dedos entre el borde del asiento y la corva.','Lumbar a la altura del cinturón.','Disco de sentado activo en tramos de 15-20 min.'],
+        tips:['5 sentadillas suaves cada vez que te levantes.','Si cambias de silla o trabajas fuera, el cojín lumbar viaja contigo.'],
+        productos:['discoSentado','sillaErgo','cojinLumbar']};
+    case 'lumbar':
+      if(r.tipoSilla==='comedor') return {
+        resumen:'Una silla de comedor no está hecha para '+(r.horas||8)+' h de trabajo.',
+        problema:'Respaldo recto sin curva lumbar, asiento duro y altura fija: la silla de comedor obliga a la musculatura a sostener la espalda baja toda la jornada, y no puedes ajustarla a la mesa.',
+        solucion:'La solución de fondo es una <b>silla de oficina regulable</b> con soporte lumbar. Mientras llega, un <b>cojín lumbar</b> convierte la de comedor en algo tolerable.',
+        pasos:['Elige una silla con altura, profundidad de asiento y lumbar regulables: el finder te filtra por tus medidas.','Hasta entonces, cojín lumbar a la altura de la curva de la espalda baja y un cojín de asiento para ganar altura.','Reclínate ligeramente a ratos (95-110°).'],
+        tips:['Báscula pélvica sentado: 8-10 repeticiones lentas.','Al levantarte, 15 s de extensión suave hacia atrás con las manos en la cadera.'],
+        productos:['sillaErgo','cojinLumbar','discoSentado']};
+      if(r.tipoSilla==='gaming') return {
+        resumen:'Las sillas gaming sujetan poco la lumbar y hunden el asiento.',
+        problema:'El cojín lumbar de serie de una silla gaming suele ser pequeño y mal colocado, y el asiento tipo baquet hunde la pelvis: la espalda baja acaba redondeada.',
+        solucion:'Sustituye el cojín de serie por un <b>cojín lumbar</b> a la altura correcta y valora una <b>silla de oficina con lumbar regulable</b> para jornadas largas.',
+        pasos:['Quita el cojín de serie y coloca el cojín lumbar en la curva de la espalda baja.','Ajusta el respaldo a 95-110° y sube el asiento hasta codos a 90°.','Si pasas más de 6 h al día, mira el finder de sillas.'],
+        tips:['Báscula pélvica sentado: 8-10 repeticiones lentas.'],
+        productos:['cojinLumbar','sillaErgo']};
+      if(r.estado && r.estado.lumbar!=='verde') return {
+        resumen:'Tu silla no sujeta la curva lumbar.',
+        problema:'Sin apoyo, la curva lumbar la sostiene la musculatura — y al fatigarse llega el desplome hacia delante.',
+        solucion:'Un soporte lumbar externo mantiene la curva natural sin esfuerzo. La solución de fondo: silla con soporte regulable.',
+        pasos:['Coloca el cojín lumbar a la altura de la curva de la espalda baja.','Ajusta la profundidad: la espalda toca el respaldo sin hueco.','Reclínate ligeramente a ratos (95-110°).'],
+        tips:['Báscula pélvica sentado: 8-10 repeticiones lentas.','Al levantarte, 15 s de extensión suave hacia atrás con las manos en la cadera.'],
+        productos:['cojinLumbar','sillaErgo']};
+      return {resumen:'Tu silla ya sujeta la zona lumbar. Correcto.',
+        problema:'Tu silla sujeta la curva lumbar. Bien: es la zona que antes se resiente en jornadas largas.',
+        solucion:'Ajusta la profundidad para que el soporte toque la espalda baja. Si cambias de silla o trabajas fuera de casa, un <b>cojín lumbar</b> lo resuelve en cualquier asiento.',
+        pasos:[], tips:['Cada hora, 3 respiraciones profundas con la espalda pegada al respaldo.'], productos:['cojinLumbar','sillaErgo']};
+    case 'pies':
+      if(r.alzaPies>0) return {
+        resumen:'Mesa fija '+r.desajusteMesa+' cm alta: sube la silla y apoya los pies.',
+        problema:'Tu mesa fija está <b>'+r.desajusteMesa+' cm por encima</b> de tu altura ideal ('+r.mesaIdeal+' cm). Si bajas la silla, los codos quedan mal; si la subes, los pies pierden apoyo y las piernas quedan quietas y sin circulación toda la jornada.',
+        solucion:'Sube la silla '+r.desajusteMesa+' cm (codos a 90°) y eleva los pies con un <b>reposapiés inclinable de '+r.alzaPies+' cm</b>: recupera el apoyo, mejora la circulación y te deja moverlos.',
+        pasos:['Sube el asiento hasta codos a 90° sobre la mesa.','Reposapiés ajustado a ~'+r.alzaPies+' cm.','Pies planos, rodillas a 90°, sin presión tras la rodilla.'],
+        tips:['Bombeo de tobillos: 20 repeticiones sentado — activa la circulación.','Ponte de puntillas 10 veces cada vez que te levantes.'],
+        productos:['reposapies','mesaElevable']};
+      if(r.horas>8) return {
+        resumen:'Con '+r.horas+' h/día, tus pies necesitan apoyo dinámico.',
+        problema:'Más de 8 horas sentado concentran presión en la cara posterior del muslo y frenan la circulación de retorno. Sin un apoyo regulable, los pies acaban mal apoyados buena parte de la jornada.',
+        solucion:'Un <b>reposapiés regulable e inclinable</b>: apoyo constante y cambio de ángulo a lo largo del día sin pensar en ello.',
+        pasos:['Ajusta la altura hasta que las rodillas queden a 90° con los pies planos.','Cambia la inclinación un par de veces al día: el movimiento también entra por los pies.','Sin presión en la parte trasera de la rodilla.'],
+        tips:['Bombeo de tobillos: 20 repeticiones sentado — activa la circulación.','Ponte de puntillas 10 veces cada vez que te levantes.'],
+        productos:['reposapies','sillaErgo']};
+      return {
+        resumen:'Elevar los pies y moverlos mejora la circulación en jornadas largas.',
+        problema:'Llegas al suelo, sí, pero con los pies quietos y planos durante horas la circulación de retorno se frena: piernas pesadas, hormigueo y tobillos hinchados al final del día.',
+        solucion:'Un <b>reposapiés inclinable</b> eleva ligeramente los pies, descarga la cara posterior del muslo y te invita a moverlos: la mejora barata que más se nota al final de la jornada.',
+        pasos:['Colócalo donde caen los pies de forma natural, con la punta algo más alta que el talón.','Cambia la inclinación un par de veces al día: el movimiento también entra por los pies.'],
+        tips:['Bombeo de tobillos: 20 repeticiones sentado — activa la circulación.'],
+        productos:['reposapies']};
+    case 'munecas':
+      if(r.estado && r.estado.munecas!=='verde') return {
+        resumen:'Con '+r.horas+' h de teclado, las muñecas necesitan atención.',
+        problema:'Muchas horas tecleando con la muñeca doblada o apoyada mientras escribes concentran presión en la base de la mano.',
+        solucion:'Muñecas rectas y neutras al teclear; apoyo <b>en las pausas</b>. Si notas pronación del antebrazo, el ratón vertical ayuda.',
+        pasos:['Teclado plano (patas plegadas) y muñecas flotando al escribir.','Apoya el talón de la mano en el reposamuñecas sólo entre frases.','Codos a 90° y pegados al cuerpo.'],
+        tips:['Estira flexores y extensores de muñeca: 15 s por lado en cada pausa.','Sacude las manos 10 s y abre-cierra los puños 10 veces.'],
+        productos:['reposamunecas','ratonVertical','tecladoRaton']};
+      return {resumen:'Pocas horas de teclado: suficiente con muñecas rectas.',
+        problema:'Carga de teclado baja: pocas horas seguidas. La muñeca doblada hacia arriba sobre el borde de la mesa es lo que hay que evitar cuando la carga suba.',
+        solucion:'Mantén las muñecas rectas, en línea con el antebrazo. Un <b>reposamuñecas</b> de espuma y un <b>ratón vertical</b> evitan que el problema aparezca.',
+        pasos:[], tips:['Abre y cierra las manos 10 veces al terminar cada bloque de trabajo.'], productos:['reposamunecas','ratonVertical']};
+    case 'core':
+      if(r.estado && r.estado.core!=='verde') return {
+        resumen:(r.horas>=6?r.horas+' h/día sentado: ':'')+'toca alternar postura.',
+        problema:'Ninguna postura es buena si es permanente'+(r.edad>=45?' — y a partir de los 45 el coste de la inmovilidad sube':'')+'.',
+        solucion:'Alterna: pausas de 2-3 min cada 45-60, y sentado activo en intervalos cortos (15-20 min).',
+        pasos:['Alarma cada 45-60 min: levántate 2-3 minutos.','Disco de sentado activo en tramos de 15-20 min.','Si puedes, alterna sentado/de pie a lo largo del día.'],
+        tips:['5 sentadillas suaves cada vez que te levantes.','Haz las llamadas caminando: pasos gratis a final de mes.'],
+        productos:['discoSentado','sillaErgo','mesaElevable']};
+      return {resumen:'Jornadas cortas: levántate con frecuencia y listo.',
+        problema:'Carga baja: jornadas cortas. Aun así, la pelvis se va hundiendo en el asiento sin que lo notes.',
+        solucion:'Mantén las pausas. Si las jornadas se alargan, un <b>disco de sentado activo</b> mantiene el core despierto sin cambiar de silla.',
+        pasos:[], tips:['Levántate al menos una vez cada hora, aunque sea un minuto.'], productos:['discoSentado']};
+    case 'llamadas':
+      if(r.estado && r.estado.llamadas!=='verde') return {
+        resumen:'El teléfono entre oreja y hombro castiga el cuello.',
+        problema:'Sujetar el teléfono entre la oreja y el hombro es una carga asimétrica repetida sobre cuello y trapecio.',
+        solucion:'Auriculares con micrófono: manos libres y cuello neutro.',
+        pasos:['Auriculares en todas las llamadas de más de un minuto.','Si dictas o transcribes, altavoz o auriculares siempre.'],
+        tips:['Inclinaciones laterales de cuello: 10 s por lado al acabar la jornada.'],
+        productos:['auriculares']};
+      return {resumen:'Sin llamadas frecuentes. Nada que corregir.',
+        problema:'Sin llamadas frecuentes hoy. El teléfono sujeto entre la oreja y el hombro es la causa más común de dolor cervical en oficina.',
+        solucion:'Si empiezan las llamadas, unos <b>auriculares con micrófono</b> dejan las manos libres y el cuello recto.',
+        pasos:[], tips:[], productos:['auriculares']};
+    case 'papel':
+      if(r.estado && r.estado.papel!=='verde') return {
+        resumen:'Cada vistazo al papel en la mesa es una flexión de cuello.',
+        problema:'Consultar documentos planos sobre la mesa obliga a flexionar el cuello cientos de veces al día.',
+        solucion:'Un atril junto a la pantalla pone el documento a la misma altura y distancia que el monitor.',
+        pasos:['Atril entre el teclado y la pantalla, o junto al monitor.','Documento a la misma distancia que la pantalla para no reenfocar.'],
+        tips:['Alterna el lado del atril cada semana para no repetir siempre el mismo giro.'],
+        productos:['atril']};
+      return {resumen:'Sin papel en tu flujo. Nada que corregir.',
+        problema:'Sin papel en tu flujo. Cada vistazo a un documento plano sobre la mesa es una flexión de cuello, cientos de veces al día.',
+        solucion:'Si vuelve el papel, un <b>atril</b> junto a la pantalla lo pone a la altura de los ojos.',
+        pasos:[], tips:[], productos:['atril']};
+  }
+}
+
+/* ---------- Recomendaciones detalladas ----------
+   La misma información que el modal, pero desplegada en la página: qué hay que
+   cambiar en cada zona sin tener que abrir nada. El modal sigue estando para el
+   antes/después y los productos. */
+function pintaDetalle(){
+  if(!R){ irVista('evaluacion'); return; }
+  const orden = Object.keys(ZONAS).sort((a,b)=>ZONAS[a].n-ZONAS[b].n);
+  $('listaDetalle').innerHTML = orden.map(id=>{
+    const z = ZONAS[id], est = R.estado[id], info = contenidoZona(id);
+    const texto = (est==='verde') ? info.resumen : info.solucion;
+    return '<div class="detalle '+est+'">'+
+      '<span class="num">'+z.n+'</span>'+
+      '<div class="cuerpo">'+
+        '<div class="fila1"><span class="nombre">'+z.nombre+'</span>'+
+        '<span class="chip '+est+'">'+CHIP[est]+'</span></div>'+
+        '<p class="desc">'+texto+'</p>'+
+        (est==='verde' ? '' : '<button class="ver-sol" data-zona="'+id+'">Ver solución →</button>')+
+      '</div></div>';
+  }).join('');
+  document.querySelectorAll('.ver-sol').forEach(b=>b.addEventListener('click', ()=>abrirModal(b.dataset.zona)));
+  renderEscena($('escenaDetalle'), true);
+}
+
+/* ---------- Modal problema/solución ---------- */
+function abrirModal(id){
+  if(!R){ irVista('evaluacion'); return; }
+  const z = ZONAS[id], est = R.estado[id], info = contenidoZona(id);
+  const prods = (CONFIG.modo==='landing') ? info.productos.filter(p=>PRODUCTOS[p].canal==='propio') : info.productos;
+  let html = '<div class="mhead"><span class="num" style="background:var(--'+({rojo:'bad',ambar:'warn',verde:'ok'}[est])+')">'+z.n+'</span>'+
+    '<h3>'+z.nombre+'</h3><span class="chip '+est+'">'+CHIP[est]+'</span></div>';
+  html += '<div class="dospaneles">'+
+    '<div class="panelps problema"><h4>Problema actual</h4>'+diagrama(id,'mal')+'<p>'+info.problema+'</p></div>'+
+    '<div class="panelps solucion"><h4>Solución recomendada</h4>'+diagrama(id,'bien')+'<p>'+info.solucion+'</p></div></div>';
+  if(info.pasos.length){
+    html += '<div class="implementa"><h4>Cómo implementarlo</h4><ul>'+
+      info.pasos.map(p=>'<li>'+p+'</li>').join('')+'</ul></div>';
+  }
+  if(info.tips && info.tips.length){
+    html += '<div class="implementa"><h4>Tips y ejercicios exprés (30-60 s)</h4><ul>'+
+      info.tips.map(t=>'<li>'+t+'</li>').join('')+'</ul></div>';
+  }
+  if(prods.length){
+    html += '<div class="prods">'+prods.map(pid=>tarjetaProducto(pid, true)).join('')+'</div>';
+  }
+  if(prods.some(p=>PRODUCTOS[p].canal==='amazon')){
+    html += '<p class="aviso">Los enlaces de Amazon son de afiliados: si compras a través de ellos, podemos recibir una comisión sin coste adicional para ti.</p>';
+  }
+  $('modalCuerpo').innerHTML = html;
+  $('overlay').classList.add('abierta');
+}
+
+/* [SKIN-4] Diagramas problema/solución ESPECÍFICOS POR ZONA.
+   Se sustituirán por pares de fotos generadas manteniendo la firma diagrama(id, modo). */
+/* [SKIN-4] Mini-escena problema/solucion: misma geometria y mismos colores que
+   la escena grande, para que el usuario reconozca su propio puesto. Cada zona
+   solo cambia lo suyo y el halo dirige la mirada. */
+function escenita(o){
+  const P = PALETA;
+  const capm = (x1,y1,x2,y2,w1,w2,fill) => {
+    const dx=x2-x1, dy=y2-y1, L=Math.hypot(dx,dy)||1, nx=-dy/L, ny=dx/L;
+    const q=(x,y)=>x.toFixed(1)+','+y.toFixed(1);
+    return '<path d="M'+q(x1+nx*w1/2,y1+ny*w1/2)+' L'+q(x2+nx*w2/2,y2+ny*w2/2)+
+      ' A'+(w2/2)+' '+(w2/2)+' 0 0 1 '+q(x2-nx*w2/2,y2-ny*w2/2)+
+      ' L'+q(x1-nx*w1/2,y1-ny*w1/2)+
+      ' A'+(w1/2)+' '+(w1/2)+' 0 0 1 '+q(x1+nx*w1/2,y1+ny*w1/2)+' Z" fill="'+fill+'"/>';
+  };
+  const bola = (x,y,d,f) => '<circle cx="'+x+'" cy="'+y+'" r="'+(d/2)+'" fill="'+f+'"/>';
+
+  const suelo = 104;
+  const alza  = o.reposapies ? 10 : 0;
+  const pieY  = suelo - alza;
+  // encorvado: la cabeza se adelanta y baja cuando la pantalla esta baja
+  const enc   = o.pantallaAlta ? 0 : 1;
+  const shX = 80, shY = 46 + enc*3;
+  const headX = 88 + enc*9, headY = 30 + enc*6;
+  const hipX = 72, hipY = 70;
+  const kneeX = 104, kneeY = 70;
+  const footX = 120;
+  const handX = o.manoAlta ? 132 : 130, handY = 62;
+  const elbX = 98, elbY = 66;
+
+  let g = '';
+  if(o.halo) g += '<circle cx="'+o.halo[0]+'" cy="'+o.halo[1]+'" r="'+(o.halo[2]||22)+'" fill="var(--accent-soft)"/>';
+  g += '<line x1="8" y1="'+suelo+'" x2="196" y2="'+suelo+'" stroke="var(--line)" stroke-width="2"/>';
+
+  /* mesa */
+  g += '<rect x="112" y="60" width="84" height="5" rx="1.5" fill="'+P.mueble+'"/>';
+  g += '<rect x="118" y="65" width="4" height="'+(suelo-65)+'" fill="#8f6a48"/>';
+  g += '<rect x="188" y="65" width="4" height="'+(suelo-65)+'" fill="#8f6a48"/>';
+
+  /* pantalla: apoyada o elevada sobre soporte */
+  if(o.pantallaAlta){
+    g += '<rect x="150" y="22" width="34" height="24" rx="2.5" fill="#23272f"/>';
+    g += '<rect x="153" y="25" width="28" height="18" rx="1.5" fill="#5c6a86"/>';
+    g += '<rect x="156" y="48" width="22" height="10" rx="2" fill="var(--ok)" opacity=".8"/>';
+  } else {
+    g += '<rect x="150" y="40" width="34" height="20" rx="2.5" fill="#23272f"/>';
+    g += '<rect x="153" y="43" width="28" height="14" rx="1.5" fill="#5c6a86"/>';
+  }
+
+  /* silla: base, columna, asiento, respaldo y (si toca) lumbar */
+  g += '<path d="M62 96 L48 102 M62 96 L76 102" stroke="#454c5a" stroke-width="4" stroke-linecap="round" fill="none"/>';
+  g += '<rect x="60" y="78" width="5" height="18" fill="#4d5563"/>';
+  g += '<rect x="46" y="72" width="42" height="7" rx="3" fill="#3a4150"/>';
+  g += '<path d="M50 72 q-5 -16 -2 -30 q9 -6 16 -1 q-6 18 -3 31z" fill="#3a4150"/>';
+  if(o.lumbar) g += '<path d="M60 54 q8 6 0 12" stroke="var(--ok)" stroke-width="5" stroke-linecap="round" fill="none"/>';
+
+  /* reposapies */
+  if(o.reposapies) g += '<path d="M104 '+suelo+' h34 l-4 -'+alza+' h-26 z" fill="var(--accent)" opacity=".9"/>';
+
+  /* persona */
+  g += capm(hipX, hipY, kneeX, kneeY, 14, 11, P.pantalon);
+  g += bola(kneeX, kneeY, 11, P.pantalon);
+  g += capm(kneeX, kneeY, footX, pieY-3, 10, 7, P.pantalon);
+  g += '<ellipse cx="'+(footX+3)+'" cy="'+(pieY-1)+'" rx="8" ry="3.2" fill="'+P.zapato+'"/>';
+  g += capm(hipX, hipY-2, shX, shY, 17, 13, P.ropa);
+  g += bola(shX, shY, 13, P.ropa);
+  g += capm(shX, shY+2, elbX, elbY, 8, 7, P.ropa2);
+  g += bola(elbX, elbY, 7, P.ropa2);
+  /* antebrazo: doblado hacia arriba (mal) o recto sobre la mesa (bien) */
+  g += capm(elbX, elbY, handX, o.munecaRecta ? 58 : handY, 7, 5.5, P.ropa2);
+  g += '<ellipse cx="'+(handX+3)+'" cy="'+(o.munecaRecta ? 58 : handY)+'" rx="4.5" ry="3.4" fill="'+P.piel+'"/>';
+  if(o.reposamunecas) g += '<rect x="'+(handX-14)+'" y="60" width="22" height="5" rx="2.5" fill="var(--ok)" opacity=".8"/>';
+  /* cuello y cabeza */
+  g += capm(shX+1, shY-2, headX-3, headY+8, 8, 7, P.pielLejos);
+  g += '<ellipse cx="'+(headX-1)+'" cy="'+(headY-1)+'" rx="10.5" ry="11" fill="'+P.pelo+'"/>';
+  g += '<ellipse cx="'+(headX+1)+'" cy="'+(headY+1)+'" rx="9" ry="9.5" fill="'+P.piel+'"/>';
+  g += '<path d="M'+(headX-8)+' '+(headY-3)+' q2 -8 10 -8 q7 0 9 6 q-6 -4 -11 -2 t-8 4z" fill="'+P.pelo+'"/>';
+  if(o.auricular) g += '<path d="M'+(headX-9)+' '+(headY-1)+' a10 10 0 0 1 20 0" stroke="var(--ok)" stroke-width="3" fill="none"/>';
+  if(o.movilHombro) g += '<rect x="'+(headX-12)+'" y="'+(headY+7)+'" width="5" height="12" rx="1.5" fill="var(--bad)" transform="rotate(-22 '+(headX-10)+' '+(headY+12)+')"/>';
+
+  /* atril y documento */
+  if(o.atril){
+    g += '<path d="M132 60 L146 34 L152 36 L140 62 Z" fill="#c9ced6"/>';
+    g += '<path d="M136 46 l10 -18 l4 1.5 l-10 18 z" fill="#fff"/>';
+  } else if(o.papelPlano){
+    g += '<rect x="128" y="56" width="26" height="4" rx="1" fill="#dfe3e8"/>';
+  }
+
+  /* linea de mirada */
+  const col = o.pantallaAlta ? 'var(--ok)' : 'var(--bad)';
+  const finY = o.pantallaAlta ? headY : 50;
+  const finX = o.papelPlano ? 140 : 150;
+  g += '<line x1="'+(headX+8)+'" y1="'+headY+'" x2="'+finX+'" y2="'+finY+'" stroke="'+col+'" stroke-width="2.2" '+
+       (o.pantallaAlta ? '' : 'stroke-dasharray="5 4"')+' stroke-linecap="round"/>';
+
+  return '<div class="dib"><svg viewBox="0 0 204 112">'+g+'</svg></div>';
+}
+
+/* Pares 3D problema/solución en plano medio (assets/escenas/modal/<zona>-problema.jpg
+   y <zona>-solucion.jpg, 1536×1024), mismo personaje que las escenas grandes.
+   Generados el 2026-09-13; la versión vectorial queda como diagramaVector() por si
+   faltara un par. */
+function diagrama(id, modo){
+  /* Zona «silla»: el par de imágenes depende del tipo de silla (2026-09-14).
+     comedor → silla-*, básica de oficina y ergonómica → lumbar-*, gaming → silla-gaming (problema)
+     con la silla ergonómica como solución. */
+  let base = id;
+  if(id==='silla'){
+    const t = (R && R.tipoSilla) || 'comedor';
+    if(t==='comedor') base = 'silla';
+    else if(t==='gaming') base = (modo==='mal') ? 'silla-gaming' : 'silla';
+    else base = 'lumbar';
+  }
+  const f = 'assets/escenas/modal/'+base+'-'+(modo==='mal' ? 'problema' : 'solucion')+'.webp?v='+ESC_VER;
+  return '<div class="dib"><img src="'+f+'" alt="" width="1536" height="1024" loading="lazy"></div>';
+}
+function diagramaVector(id, modo){
+  const mal = modo === 'mal';
+  const base = {pantallaAlta:!mal, reposapies:false, lumbar:false, munecaRecta:!mal};
+  switch(id){
+    case 'monitor':
+      return escenita(Object.assign({}, base, {halo:[167, mal?50:34, 26]}));
+    case 'lumbar':
+      return escenita(Object.assign({}, base, {pantallaAlta:true, munecaRecta:true,
+        lumbar:!mal, halo:[60, 60, 20]}));
+    case 'munecas':
+      return escenita(Object.assign({}, base, {pantallaAlta:true, munecaRecta:!mal,
+        reposamunecas:!mal, halo:[130, 60, 20]}));
+    case 'pies':
+      return escenita(Object.assign({}, base, {pantallaAlta:true, munecaRecta:true,
+        reposapies:!mal, halo:[122, 98, 22]}));
+    case 'core':
+      return escenita(Object.assign({}, base, {pantallaAlta:true, munecaRecta:true,
+        lumbar:!mal, reposapies:!mal, halo:[76, 70, 24]}));
+    case 'llamadas':
+      return escenita(Object.assign({}, base, {pantallaAlta:true, munecaRecta:true,
+        movilHombro:mal, auricular:!mal, halo:[90, 34, 22]}));
+    case 'papel':
+      return escenita(Object.assign({}, base, {pantallaAlta:true, munecaRecta:true,
+        papelPlano:mal, atril:!mal, halo:[142, mal?56:46, 22]}));
+    default:
+      return '';
+  }
+}
+
+function cerrarModal(){ $('overlay').classList.remove('abierta'); }
+$('btnCerrar').addEventListener('click', cerrarModal);
+$('overlay').addEventListener('click', e=>{ if(e.target===$('overlay')) cerrarModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarModal(); });
+
+/* ---------- Email (TODO: Klaviyo/Shopify Email + evento de píxel Lead) ---------- */
+/* Captura de lead con consentimiento (RGPD).
+   TODO integración: alta en Klaviyo/Shopify Email con email + consentimiento +
+   fecha (la base de datos del emailing de productos) y evento de píxel 'Lead'.
+   Los enlaces #privacidad y #terminos apuntarán a las páginas legales (paso 2.10). */
+function enviarInforme(emId, chkId, okId){
+  const em = val(emId), ok = $(okId);
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ ok.textContent='Revisa el email — no parece válido.'; return; }
+  if(!$(chkId).checked){ ok.textContent='Marca la casilla de privacidad para que podamos enviarte el informe.'; return; }
+  try{ localStorage.setItem('ergocheck-lead', JSON.stringify({email:em, consent:true, fecha:new Date().toISOString()})); }catch(e){}
+  ok.textContent='¡Hecho! Tu informe va de camino a '+em+'. (Demo: integración de email pendiente)';
+}
+$('btnEmail').addEventListener('click', ()=>enviarInforme('email','consent','emailOk'));
+$('btnEmail2').addEventListener('click', ()=>enviarInforme('email2','consent2','emailOk2'));
+
+/* ---------- Init ---------- */
+preview();
+$('estatura').focus();
+</script>
+<!-- Escaparate de categorías (2026-09-13, pedido por el usuario): la misma tira de
+     la portada, entre la herramienta y el bloque SEO. Copiada tal cual de index.html;
+     si cambia allí, copiarla de nuevo (ergocheck.html no se genera). -->
+<section class="cat-seccion" aria-label="Explora el catálogo">
+  <div class="microtit">Explora el catálogo por categoría</div>
+  <div class="cat-escaparate"><a class="cat-tile" href="sillas-ergonomicas.html"><span class="cat-tile-art foto"><img src="assets/escenas/cat/sillas.webp?v=20260916" alt="Silla ergonómica en un despacho en casa" width="600" height="900" loading="lazy"></span><span class="cat-tile-lbl">Sillas ergonómicas</span></a><a class="cat-tile" href="escritorios-elevables.html"><span class="cat-tile-art foto"><img src="assets/escenas/cat/escritorios.webp?v=20260916" alt="Escritorio elevable en posición de pie" width="600" height="900" loading="lazy"></span><span class="cat-tile-lbl">Escritorios elevables</span></a><a class="cat-tile" href="convertidores-de-escritorio.html"><span class="cat-tile-art foto"><img src="assets/escenas/cat/convertidores.webp?v=20260916" alt="Convertidor de escritorio sobre una mesa fija" width="600" height="900" loading="lazy"></span><span class="cat-tile-lbl">Convertidores de escritorio</span></a><a class="cat-tile" href="ratones-ergonomicos.html"><span class="cat-tile-art foto"><img src="assets/escenas/cat/ratones.webp?v=20260916" alt="Ratón vertical sobre el escritorio" width="600" height="900" loading="lazy"></span><span class="cat-tile-lbl">Ratones</span></a><a class="cat-tile" href="teclados-ergonomicos.html"><span class="cat-tile-art foto"><img src="assets/escenas/cat/teclados.webp?v=20260916" alt="Teclado ergonómico partido sobre el escritorio" width="600" height="900" loading="lazy"></span><span class="cat-tile-lbl">Teclados ergonómicos</span></a></div>
+</section>
+<!--SEO:BODY-->
+<section class="seo-block">
+<hr class="seo-hr">
+<h2>Calculadora de ergonomía: qué hace ErgoCheck</h2>
+<p class="lead">ErgoCheck convierte tu estatura en las tres alturas que determinan la postura frente
+al ordenador — <strong>asiento, mesa y pantalla</strong> — y las compara con las de tu puesto actual
+para señalarte, con un semáforo por zonas, qué está bien y qué te está pasando factura.</p>
+<p>Es gratis, funciona en el navegador y no pide registro: tus medidas nunca salen de tu dispositivo.
+Tarda alrededor de un minuto y, al terminar, el resto de la web se personaliza con tus datos: las
+sillas y periféricos del catálogo pasan a mostrar tu <strong>porcentaje de ajuste real</strong> en
+lugar de una nota genérica.</p>
+
+<h2>El método: las fórmulas que usamos</h2>
+<p>No usamos criterios opacos. Estas son las tres reglas antropométricas con las que calculamos tus
+valores objetivo, aplicadas igual para todo el mundo:</p>
+<ul>
+  <li><strong>Altura de asiento ≈ estatura × 0,25.</strong> Equivale a tu altura poplítea, la
+  distancia del suelo al hueco de la rodilla. Es la medida que decide si tus pies apoyan.</li>
+  <li><strong>Altura de mesa ≈ estatura × 0,43.</strong> La que deja los codos a unos 90° con los
+  hombros relajados al teclear.</li>
+  <li><strong>Altura de los ojos ≈ altura de asiento + estatura × 0,395.</strong> El borde superior
+  del monitor debe quedar a esa altura para no flexionar ni extender el cuello.</li>
+</ul>
+<p>Son aproximaciones antropométricas ampliamente usadas, no dogmas: la proporción entre tronco y
+piernas varía entre personas. Úsalas como punto de partida y ajusta al confort real.</p>
+
+<h2>Tabla de medidas ergonómicas por estatura</h2>
+<p>Si solo quieres la referencia rápida sin usar la calculadora, busca tu estatura en esta tabla.
+Todas las cifras salen de las fórmulas anteriores:</p>
+<div class="seo-scroll"><table class="seo-tabla"><caption>Medidas ergonómicas de referencia según tu estatura</caption><tr><th>Estatura</th><th>Altura de asiento</th><th>Altura de mesa</th><th>Altura de los ojos (borde superior del monitor)</th></tr><tr><th>155 cm</th><td>39 cm</td><td>67 cm</td><td>100 cm</td></tr><tr><th>160 cm</th><td>40 cm</td><td>69 cm</td><td>103 cm</td></tr><tr><th>165 cm</th><td>41 cm</td><td>71 cm</td><td>106 cm</td></tr><tr><th>170 cm</th><td>42 cm</td><td>73 cm</td><td>109 cm</td></tr><tr><th>175 cm</th><td>44 cm</td><td>75 cm</td><td>113 cm</td></tr><tr><th>180 cm</th><td>45 cm</td><td>77 cm</td><td>116 cm</td></tr><tr><th>185 cm</th><td>46 cm</td><td>80 cm</td><td>119 cm</td></tr><tr><th>190 cm</th><td>48 cm</td><td>82 cm</td><td>123 cm</td></tr><tr><th>195 cm</th><td>49 cm</td><td>84 cm</td><td>126 cm</td></tr><tr><th>200 cm</th><td>50 cm</td><td>86 cm</td><td>129 cm</td></tr></table></div>
+<p>¿Tu mesa mide 75 cm y tú 1,62 m? Entonces necesitas subir la silla por encima de tu altura ideal
+y compensar con un <strong>reposapiés</strong>. Es el caso más común y el que más molestias de
+espalda y hombros genera en teletrabajo.</p>
+
+<h2>Preguntas frecuentes sobre ergonomía del puesto de trabajo</h2>
+<details class='seo-faq'><summary>¿A qué altura debe estar la silla según mi estatura?</summary><p>Tu altura de asiento ideal es aproximadamente el 25 % de tu estatura, que equivale a tu altura poplítea (del suelo al hueco de la rodilla). Con 1,75 m son unos 44 cm. Sentado a esa altura, los pies apoyan completos en el suelo y las rodillas quedan a unos 90°.</p></details><details class='seo-faq'><summary>¿Y la altura de la mesa?</summary><p>Ronda el 43 % de tu estatura: unos 75 cm para 1,75 m, que es justo la altura estándar de las mesas comerciales. Por eso las personas por debajo de 1,70 m o por encima de 1,85 m suelen necesitar mesa regulable, reposapiés o elevar la silla.</p></details><details class='seo-faq'><summary>¿Dónde coloco el monitor?</summary><p>El borde superior de la pantalla debe quedar a la altura de tus ojos sentado, a un brazo de distancia (50-70 cm). ErgoCheck calcula esa altura sumando a tu altura de asiento aproximadamente el 39,5 % de tu estatura.</p></details><details class='seo-faq'><summary>¿Es fiable una calculadora ergonómica online?</summary><p>Sirve para detectar desajustes evidentes y darte objetivos numéricos concretos, que es más de lo que hace la mayoría de la gente. No sustituye una evaluación presencial: la antropometría individual varía, sobre todo en la proporción entre tronco y piernas.</p></details><details class='seo-faq'><summary>¿Necesito registrarme o dar mis datos?</summary><p>No. ErgoCheck es gratis, no requiere registro y tus medidas se guardan solo en el almacenamiento local de tu navegador para personalizar el resto de la web. No se envían a ningún servidor.</p></details><details class='seo-faq'><summary>¿Cada cuánto debo levantarme?</summary><p>La recomendación habitual es cambiar de postura cada 30 minutos y levantarse cada 50-60 minutos. Ninguna silla, por buena que sea, sustituye el movimiento.</p></details>
+
+<h2>Después de medirte</h2>
+<p>Un diagnóstico sin acción no sirve de nada. Si ErgoCheck detecta que tu silla no llega a tu
+altura de asiento ideal o no soporta tu peso, estos son los siguientes pasos:</p>
+<div class="seo-links"><a href="sillas-ergonomicas.html#filtros">Encuentra tu silla por medidas<span>Las sillas del catálogo ordenadas por tu % de ajuste real</span></a><a href="ratones-ergonomicos.html#filtros">Ratón y teclado por talla de mano<span>Mide tu mano en 20 segundos y filtra por tu talla</span></a><a href="mejor-silla-ergonomica-personas-altas.html">Sillas para personas altas<span>Si mides 1,85 m o más y el asiento se te queda bajo</span></a><a href="mejor-silla-ergonomica-personas-bajas.html">Sillas para personas bajas<span>Si mides menos de 1,65 m y los pies te quedan colgando</span></a><a href="mejor-silla-ergonomica-8-horas.html">Sillas para 8 horas al día<span>Lumbar regulable o activo y profundidad ajustable</span></a><a href="cara-a-cara.html">Todos los duelos cara a cara<span>Modelos del mismo tramo, con veredicto y tabla spec a spec</span></a></div>
+<p class="seo-nota">Los cálculos son orientativos y educativos: no sustituyen una valoración profesional. Si tienes dolor persistente, consulta con un médico o fisioterapeuta. Algunos enlaces de esta web son de afiliados — si compras a través de ellos podemos recibir una comisión sin coste adicional para ti.</p>
+</section><!--/SEO:BODY-->
+</body>
+</html>

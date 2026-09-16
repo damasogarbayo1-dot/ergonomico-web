@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe ErgoCheck — mockup del email</title>
+<meta name="robots" content="noindex,nofollow">
+<!--
+  MOCKUP del informe que ErgoCheck envía por email (datos de ejemplo: 175 cm, 8 h, portátil).
+  Reglas aplicadas:
+  - CERO enlaces de afiliado de Amazon (prohibido por Amazon en emails — doc 10).
+    El ticket alto enlaza a NUESTRA guía en la web; la guía lleva el afiliado.
+  - Una columna 600 px, estilos inline, sin JS: sobrevive a Gmail/Outlook.
+  - Sin claims médicos (filtro 5).
+  TODO al portar a Klaviyo: variables {{ }} en los valores, URL reales, y el
+  enlace de baja {% unsubscribe %}.
+-->
+<!--TEMA:INI-->
+<style id="tema-ergonomico">
+/* Tokens del sitio (copiados de la referencia): la herramienta y la web deben
+   verse como el mismo producto. */
+:root{
+  --bg:#ffffff; --panel:#ffffff; --panel2:#f5f4f1;
+  --ink:#000000; --muted:#6c757d;
+  --line:#e6e3de; --line-2:#ced4da;
+  --accent:#8a7645; --accent-ink:#ffffff; --accent-soft:#f6f1e4;
+  --oro:#baa35b; --oro-claro:#e8d087;
+  --ok:#5f7d6a; --okbg:#eef2ef;
+  --warn:#8a7645; --warnbg:#f6f1e4;
+  --bad:#a06557; --badbg:#f7efec;
+  --field:#ffffff;
+  --radio:0px;
+  --sombra:0 2px 18px rgba(0,0,0,.07);
+  --fuente:'Jost','Helvetica Neue',Arial,sans-serif;
+  --display:'Archivo','Arial Narrow',Arial,sans-serif;
+  --s1:#000000; --s2:#a06557; --s3:#baa35b;
+}
+body{background:var(--bg)}
+h1,h2,h3,h4,.vs-prod .nom{font-family:var(--display);letter-spacing:-.02em}
+
+/* Esquina viva en contenedores y controles (la referencia no redondea nada) */
+.card,.card-form,.card-pack,.silla,.perif,.mesa,.prod,.sec,.stat,.modal,.marcas,
+.foto-lista,.crossell,.veredicto,.vs-why .col,.vs-prod .foto,.importado,.adslot,
+.seo-faq,.seo-links a,.seo-tabla,.preview-informe,.vs-cat,.vchip,
+input,select,textarea,button,.btn,.verbtn,.linkbtn,.cmpbtn,.barra-cmp{border-radius:0}
+.card,.silla,.perif,.mesa{box-shadow:none}
+
+/* Lo que si sigue siendo pastilla: etiquetas de dato */
+.ck,.canal,.chip,.tag,.badge,.talla-chip,.precio-chip,.sello{border-radius:999px}
+
+/* CTA principal: negro solido, mayusculas y tracking, como en el sitio */
+.btn,.verbtn,.linkbtn,.cta,.btn-buy{
+  background:#000;color:#fff;border:1px solid #000;
+  text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.btn:hover,.verbtn:hover,.linkbtn:hover,.cta:hover,.btn-buy:hover{background:#fff;color:#000}
+/* CTA secundario: contorno negro */
+.cmpbtn,.btn-secundario,.btn-ghost{
+  background:#fff;color:#000;border:1px solid #000;border-style:solid;
+  text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.cmpbtn:hover,.btn-secundario:hover,.btn-ghost:hover{background:#000;color:#fff}
+.cmpbtn.on{background:#000;color:#fff;border-color:#000}
+.barra-cmp{background:#000;color:#fff;box-shadow:none}
+.barra-cmp button{background:#fff;color:#000;border:1px solid #fff;
+  text-transform:uppercase;letter-spacing:.1em;font-weight:700}
+.barra-cmp button:hover{background:transparent;color:#fff}
+
+/* ---- Cabecera de la herramienta, con el mismo aire editorial del sitio ---- */
+.tbar{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.94);
+  backdrop-filter:saturate(180%) blur(8px);border-bottom:1px solid var(--line)}
+.tnav{color:var(--ink-2)!important;text-decoration:none;padding:8px 12px;
+  border-radius:0!important;background:transparent!important;
+  text-transform:uppercase;letter-spacing:.08em;font-size:0.7812rem;font-weight:700}
+.tnav:hover{color:var(--ink)!important}
+.tnav.on{color:var(--ink)!important;border-bottom:2px solid var(--accent)}
+.top{align-items:flex-end;padding-bottom:6px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.top h1{font-family:var(--display);font-size:clamp(30px,4.2vw,50px);line-height:.95;
+  letter-spacing:-.015em;text-transform:uppercase;margin:0}
+.top .tag{font-size:0.75rem;font-weight:700;letter-spacing:.125em;text-transform:uppercase;
+  color:var(--muted);margin-top:8px}
+.top .tag b{color:var(--ink);font-weight:700}
+.volver{border:1px solid var(--ink);padding:9px 14px;font-size:0.75rem;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--ink)!important;text-decoration:none;
+  background:transparent;transition:background .16s,color .16s}
+.volver:hover{background:var(--ink);color:#fff!important}
+.marca-2{color:var(--accent)}
+.navbtn{border-radius:0}
+.navbtn.activo{background:var(--accent-soft);color:var(--accent);border-left:2px solid var(--accent)}
+/* ---- Vista de evaluacion: una sola tarjeta, escena a tamano hero ---- */
+.panel-eval{padding:0;overflow:hidden;border:1px solid var(--line)}
+.panel-eval .cols{grid-template-columns:minmax(300px,380px) 1fr;gap:0;align-items:stretch}
+.lado-form{padding:34px 30px}
+.lado-escena{background:var(--panel2);border-left:1px solid var(--line);padding:26px 26px 20px;
+  display:flex;flex-direction:column;justify-content:center}
+.lado-escena .escena-wrap{border:0;background:transparent}
+.lado-escena .live-card{margin:14px 0 0;font-size:0.9375rem;color:var(--ink-2);line-height:1.55}
+@media(max-width:1000px){
+  /* Esta regla es mas especifica que el .cols del propio finder, asi que sin
+     este override la vista se quedaba a dos columnas tambien en el movil y
+     desbordaba la pantalla. */
+  .panel-eval .cols{grid-template-columns:1fr}
+  .lado-escena{border-left:0;border-top:1px solid var(--line);padding:20px 18px}
+  .lado-form{padding:26px 22px}
+}
+/* Los enlaces de vuelta y el boton de la derecha, al estilizarlos con borde y
+   tracking, dejaron de caber en 390 px: aqui se les deja envolver. */
+@media(max-width:640px){
+  .top{flex-wrap:wrap;gap:10px}
+  .top .right{width:100%}
+  .volver,.linkbtn{padding:8px 11px;font-size:0.7188rem;letter-spacing:.06em}
+  .escena-wrap,.escena-wrap svg{max-width:100%}
+}
+/* Campos mas altos, con la unidad dentro (como en la referencia) */
+.lado-form label{position:relative;display:block}
+.lado-form input,.lado-form select{padding:13px 14px;font-size:1.0312rem}
+.lado-form .lbl{font-size:0.875rem;font-weight:600;color:var(--ink-2)}
+.uni{position:absolute;right:14px;bottom:13px;font-size:0.875rem;color:var(--muted);pointer-events:none}
+.lado-form input[type=number]{padding-right:52px}
+.lado-form .lbl i{font-style:normal;color:var(--muted);font-weight:400}
+.sub{font-size:1.0938rem;line-height:1.6;color:var(--ink-2);max-width:70ch}
+.sub b{color:var(--ink)}
+
+/* ---- Escala fluida, la misma ley que styles.css ----
+   Los tamanos de estas herramientas estan en rem, asi que esta linea gobierna
+   el tamano de toda la herramienta: igual que ahora hasta 1280 px y creciendo
+   en monitores grandes, donde antes se veia diminuta. */
+html{font-size:clamp(16px, 0.55vw + 9px, 20px)}
+/* En movil todo lo pulsable llega a 44 px de alto: es donde se usa la web. */
+@media(max-width:760px){
+  .btn,.verbtn,.linkbtn,.volver,.navbtn{min-height:44px;display:inline-flex;
+    align-items:center;justify-content:center}
+  .lado-form input,.lado-form select{min-height:48px}
+  /* El menu superior, en una sola fila desplazable (igual que en el sitio):
+     apilado ocupaba media pantalla antes del contenido. */
+  .tbar nav{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;
+    margin-left:0!important;width:100%}
+  .tbar nav::-webkit-scrollbar{display:none}
+  .tnav{flex:none;white-space:nowrap}
+}
+/* El plano acotado necesita mas ancho que el iconito al que sustituye */
+.silla,.perif,.peri,.mesa{grid-template-columns:60px 96px 1fr auto}
+.foto-lista{width:96px;height:74px;overflow:hidden;background:var(--panel2)}
+.foto-lista svg{width:100%;height:100%}
+@media(max-width:720px){.silla,.perif,.peri,.mesa{grid-template-columns:52px 76px 1fr}}
+</style>
+<!--TEMA:FIN-->
+</head>
+<body style="margin:0;padding:0;background:#eef0f4;font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;">
+<div style="display:none;max-height:0;overflow:hidden;">Tus medidas exactas y tu plan de mejora en 4 pasos — informe ErgoCheck</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef0f4;padding:24px 12px;">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+  <!-- CABECERA -->
+  <tr><td style="padding:8px 8px 16px;">
+    <table role="presentation" width="100%"><tr>
+      <td style="font-size:1.2188rem;font-weight:800;color:#131722;">Ergonomi<span style="color:#5b5bd6;">&amp;</span>Co</td>
+      <td align="right" style="font-size:0.8438rem;color:#616a78;">Informe ErgoCheck · 20/08/2026</td>
+    </tr></table>
+  </td></tr>
+
+  <!-- HERO -->
+  <tr><td style="background:#5b5bd6;border-radius:16px 16px 0 0;padding:32px 32px 28px;">
+    <div style="font-size:0.8438rem;font-weight:700;letter-spacing:.08em;color:#c9c9f5;text-transform:uppercase;margin-bottom:8px;">Tu informe ergonómico personalizado</div>
+    <div style="font-size:1.725rem;line-height:1.25;font-weight:800;color:#ffffff;">Hola, Dámaso: tu puesto tiene<br>4 aspectos a mejorar</div>
+    <div style="font-size:0.9688rem;color:#e4e4fb;margin-top:10px;">Calculado para tu estatura (175 cm) y tu jornada (8 h/día con portátil).
+    Aquí tienes las medidas exactas y el plan, por orden de impacto.</div>
+  </td></tr>
+
+  <!-- MEDIDAS -->
+  <tr><td style="background:#ffffff;padding:28px 32px 8px;">
+    <div style="font-size:0.8438rem;font-weight:800;letter-spacing:.06em;color:#616a78;text-transform:uppercase;margin-bottom:14px;">Tus medidas exactas</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="33%" style="background:#f6f7fb;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:1.4688rem;font-weight:800;color:#131722;">44 cm</div>
+          <div style="font-size:0.8438rem;color:#616a78;">Altura de asiento</div></td>
+        <td width="8">&nbsp;</td>
+        <td width="33%" style="background:#f6f7fb;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:1.4688rem;font-weight:800;color:#131722;">75 cm</div>
+          <div style="font-size:0.8438rem;color:#616a78;">Altura de mesa</div></td>
+        <td width="8">&nbsp;</td>
+        <td width="33%" style="background:#f6f7fb;border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:1.4688rem;font-weight:800;color:#131722;">113 cm</div>
+          <div style="font-size:0.8438rem;color:#616a78;">Tu línea de ojos</div></td>
+      </tr>
+    </table>
+    <div style="font-size:0.9062rem;color:#616a78;margin-top:12px;">Imprime esta tarjeta o guárdala: son tus números para ajustar cualquier puesto — en casa, en la oficina o de viaje.</div>
+  </td></tr>
+
+  <!-- DIAGNÓSTICO -->
+  <tr><td style="background:#ffffff;padding:24px 32px 4px;">
+    <div style="font-size:0.8438rem;font-weight:800;letter-spacing:.06em;color:#616a78;text-transform:uppercase;margin-bottom:14px;">Tu diagnóstico por zonas</div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f0d3d3;background:#fdf6f6;border-radius:12px;margin-bottom:10px;"><tr>
+      <td width="34" style="padding:14px 0 14px 14px;vertical-align:top;"><div style="width:24px;height:24px;border-radius:50%;background:#d64545;color:#fff;font-size:0.8438rem;font-weight:800;text-align:center;line-height:24px;">1</div></td>
+      <td style="padding:12px 14px;">
+        <div style="font-size:1rem;font-weight:700;color:#131722;">Altura de la pantalla <span style="font-size:0.7812rem;font-weight:800;color:#d64545;background:#fbe3e3;border-radius:10px;padding:2px 8px;margin-left:6px;">CRÍTICO</span></div>
+        <div style="font-size:0.9062rem;color:#616a78;margin-top:3px;">Tu portátil queda ~24 cm por debajo de tu línea de ojos. Solución: soporte de portátil + teclado externo.</div>
+      </td></tr></table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f0d3d3;background:#fdf6f6;border-radius:12px;margin-bottom:10px;"><tr>
+      <td width="34" style="padding:14px 0 14px 14px;vertical-align:top;"><div style="width:24px;height:24px;border-radius:50%;background:#d64545;color:#fff;font-size:0.8438rem;font-weight:800;text-align:center;line-height:24px;">2</div></td>
+      <td style="padding:12px 14px;">
+        <div style="font-size:1rem;font-weight:700;color:#131722;">Apoyo lumbar <span style="font-size:0.7812rem;font-weight:800;color:#d64545;background:#fbe3e3;border-radius:10px;padding:2px 8px;margin-left:6px;">CRÍTICO</span></div>
+        <div style="font-size:0.9062rem;color:#616a78;margin-top:3px;">Tu silla no sujeta la curva lumbar. Solución: cojín lumbar a la altura de la espalda baja.</div>
+      </td></tr></table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f2e4c8;background:#fdf9f0;border-radius:12px;margin-bottom:10px;"><tr>
+      <td width="34" style="padding:14px 0 14px 14px;vertical-align:top;"><div style="width:24px;height:24px;border-radius:50%;background:#b97a08;color:#fff;font-size:0.8438rem;font-weight:800;text-align:center;line-height:24px;">3</div></td>
+      <td style="padding:12px 14px;">
+        <div style="font-size:1rem;font-weight:700;color:#131722;">Muñecas <span style="font-size:0.7812rem;font-weight:800;color:#b97a08;background:#f8ecd4;border-radius:10px;padding:2px 8px;margin-left:6px;">A MEJORAR</span></div>
+        <div style="font-size:0.9062rem;color:#616a78;margin-top:3px;">8 h de teclado: muñecas neutras al escribir y apoyo en pausas con reposamuñecas.</div>
+      </td></tr></table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #f2e4c8;background:#fdf9f0;border-radius:12px;margin-bottom:10px;"><tr>
+      <td width="34" style="padding:14px 0 14px 14px;vertical-align:top;"><div style="width:24px;height:24px;border-radius:50%;background:#b97a08;color:#fff;font-size:0.8438rem;font-weight:800;text-align:center;line-height:24px;">4</div></td>
+      <td style="padding:12px 14px;">
+        <div style="font-size:1rem;font-weight:700;color:#131722;">Caderas y core <span style="font-size:0.7812rem;font-weight:800;color:#b97a08;background:#f8ecd4;border-radius:10px;padding:2px 8px;margin-left:6px;">A MEJORAR</span></div>
+        <div style="font-size:0.9062rem;color:#616a78;margin-top:3px;">8 h sentado: alterna con sentado activo por intervalos y pausas cada 45-60 min.</div>
+      </td></tr></table>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e4e7ec;background:#fbfcfd;border-radius:12px;"><tr>
+      <td width="34" style="padding:14px 0 14px 14px;vertical-align:top;"><div style="width:24px;height:24px;border-radius:50%;background:#178a5c;color:#fff;font-size:0.8438rem;font-weight:800;text-align:center;line-height:24px;">✓</div></td>
+      <td style="padding:12px 14px;">
+        <div style="font-size:1rem;font-weight:700;color:#131722;">En buen estado</div>
+        <div style="font-size:0.9062rem;color:#616a78;margin-top:3px;">Apoyo de los pies · Llamadas · Documentos — nada que corregir hoy.</div>
+      </td></tr></table>
+  </td></tr>
+
+  <!-- PACK -->
+  <tr><td style="background:#ffffff;padding:28px 32px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4fd;border:1px solid #dcdcf7;border-radius:16px;"><tr><td style="padding:24px;">
+      <div style="font-size:0.8438rem;font-weight:800;letter-spacing:.06em;color:#5b5bd6;text-transform:uppercase;margin-bottom:6px;">Tu pack recomendado</div>
+      <div style="font-size:1.2812rem;font-weight:800;color:#131722;margin-bottom:12px;">Las 4 piezas que tu puesto necesita</div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="font-size:0.9688rem;color:#131722;">
+        <tr><td style="padding:6px 0;border-bottom:1px solid #e4e4f6;">✔ &nbsp;Soporte de portátil plegable <span style="color:#616a78;font-size:0.875rem;">— sube la pantalla a tus 113 cm</span></td></tr>
+        <tr><td style="padding:6px 0;border-bottom:1px solid #e4e4f6;">✔ &nbsp;Cojín lumbar viscoelástico <span style="color:#616a78;font-size:0.875rem;">— convierte tu silla en ergonómica</span></td></tr>
+        <tr><td style="padding:6px 0;border-bottom:1px solid #e4e4f6;">✔ &nbsp;Reposamuñecas de espuma <span style="color:#616a78;font-size:0.875rem;">— apoyo en las pausas de tecleo</span></td></tr>
+        <tr><td style="padding:6px 0;">✔ &nbsp;Disco de sentado activo <span style="color:#616a78;font-size:0.875rem;">— alterna postura sin levantarte</span></td></tr>
+      </table>
+      <!-- TODO: URL real del pack en la tienda -->
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:18px;"><tr>
+        <td style="background:#5b5bd6;border-radius:10px;">
+          <a href="#tienda-pack" style="display:inline-block;padding:14px 28px;font-size:1.0312rem;font-weight:700;color:#ffffff;text-decoration:none;">Ver mi pack completo →</a>
+        </td></tr></table>
+      <div style="font-size:0.8438rem;color:#616a78;margin-top:10px;">Envío desde almacén europeo en 3-7 días · Devolución 14 días</div>
+    </td></tr></table>
+  </td></tr>
+
+  <!-- HÁBITOS -->
+  <tr><td style="background:#ffffff;padding:24px 32px 8px;">
+    <div style="font-size:0.8438rem;font-weight:800;letter-spacing:.06em;color:#616a78;text-transform:uppercase;margin-bottom:12px;">Tu plan de hábitos (gratis, empieza hoy)</div>
+    <div style="font-size:0.9688rem;color:#131722;line-height:1.7;">
+      <b>1.</b> Levántate 2-3 min cada 45-60 — pon una alarma.<br>
+      <b>2.</b> Regla 20-20-20: cada 20 min, mira a ~6 m durante 20 s.<br>
+      <b>3.</b> Ejercicio exprés de hoy: retracción suave de barbilla, 5 repeticiones.
+    </div>
+    <div style="font-size:0.9062rem;color:#616a78;margin-top:12px;">¿Silla o mesa nuevas en el horizonte?
+    <a href="#web-guias" style="color:#5b5bd6;font-weight:700;">Lee nuestras guías de compra</a> antes de decidir.</div>
+  </td></tr>
+
+  <!-- CTA SECUNDARIO + LEGAL -->
+  <tr><td style="background:#ffffff;border-radius:0 0 16px 16px;padding:24px 32px 28px;">
+    <div style="border-top:1px solid #e4e7ec;padding-top:18px;font-size:0.9062rem;color:#616a78;">
+      ¿Cambia tu setup? <a href="#web-calculadora" style="color:#5b5bd6;font-weight:700;">Repite tu evaluación ErgoCheck</a> cuando quieras.
+    </div>
+  </td></tr>
+
+  <tr><td style="padding:20px 16px;text-align:center;font-size:0.8125rem;color:#8a93a2;line-height:1.6;">
+    Recibes este email porque solicitaste tu informe en la calculadora ErgoCheck de Ergonomi&amp;Co.<br>
+    Contenido orientativo de bienestar, no consejo médico (ISO 9241-5 · EN 1335 · guía INSST).<br>
+    Ergonomi&amp;Co · [Dirección fiscal] · <a href="#baja" style="color:#8a93a2;">Darse de baja</a>
+    <!-- TODO Klaviyo: {% unsubscribe %} y dirección real (obligatorio LSSI/RGPD) -->
+  </td></tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>
